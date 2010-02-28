@@ -1,0 +1,195 @@
+<?php
+//$Id$
+
+/**
+ * @file
+ * Implements a select list widget that lets a user provide an alternate option.
+ */
+
+
+/**
+ * Implementation of hook_widget_info().
+ */
+function cck_select_other_widget_info() {
+
+  return array(
+    'cck_select_other' => array(
+      'label' => t('Select other list'),
+      'field types' => array('text', 'number_integer', 'number_decimal', 'number_float'),
+      'multiple values' => CONTENT_HANDLE_MODULE,
+      'callbacks' => array(
+        'default value' => CONTENT_CALLBACK_DEFAULT,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_widget_settings
+ */
+function cck_select_other_widget_settings($op, $widget) {
+  switch($op) {
+    case 'form':
+      $form['select_list_options'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Select list options'),
+        '#description' => t('CCK Select Other uses a separate text area to generate options. You may also put restricted values in the Allowed Values text area.'),
+        '#default_value' => $widget['select_list_options'],
+      );
+      return $form;
+      break;
+    case 'save':
+      return array('select_list_options'); 
+     break;
+  }
+}
+
+/**
+ * Implementation of hook_elements
+ */
+function cck_select_other_elements() {
+  return array(
+    'cck_select_other' => array(
+      '#input' => TRUE,
+      '#pre_render' => array('cck_select_other_pre_render'),
+      '#columns' => array('value'), '#delta' => 0,
+      '#process' => array('cck_select_other_process'),
+      ),
+    );
+}
+
+/**
+ * Implementation of hook_widget().
+ */
+function cck_select_other_widget(&$form, &$form_state, $field, $items, $delta = NULL) {
+  $element = array(
+    '#type' => $field['widget']['type'],
+    '#default_value' => '',
+  );
+
+  $options = cck_select_other_options($field);
+  if (!isset($options[$items[$delta]['value']])) {
+    $def = 'other';
+  }
+  else {
+    $def = $items[$delta]['value'];
+  }
+
+  $element['select_other_list'] = array(
+    '#type' => 'select',
+    '#title' => $element['#field_name'],
+    '#options' => $options,
+    '#default_value' => $def,
+  );
+  $element['select_other_text_input'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Specify other'),
+    '#default_value' => ($def == 'other') ? $items[$delta]['value'] : '',
+  );
+  return $element;
+}
+
+/**
+ * Process an individual element.
+ *
+ * Build the form element. When creating a form using FAPI #process,
+ * note that $element['#value'] is already set.
+ *
+ * The $fields array is in $form['#field_info'][$element['#field_name']].
+ */
+function cck_select_other_process($element, $edit, &$form_state, $form) {
+  $field_name = $element['#field_name'];
+  $field = $form['#field_info'][$field_name];
+  $field_key  = $element['#columns'][0];
+  $delta = $element['#delta'];
+
+  $element['#type'] = 'fieldset';
+  unset($element['#value']);
+  $element['#collapsible'] = TRUE;
+  $element['#collapsed'] = FALSE;
+
+  if ($edit['select_other_list'] == 'other' && !empty($edit['select_other_text_input']) && !empty($edit)) {
+    $element['#value'] = array(array('value' => $edit['select_other_text_input']));
+    $form_state['values'][$field_name] = $element['#value'][$delta];
+    $form_state['clicked_button']['#post'][$field_name] = $element['#value'][$delta];
+  }
+  else if (!empty($edit)) {
+    $element['#value'] = array(array('value' => $edit['select_other_list']));
+    $form_state['values'][$field_name] = $element['#value'][$delta];
+    $form_state['clicked_button']['#post'][$field_name] = $element['#value'][$delta];
+  }
+
+  if (empty($element['#element_validate'])) {
+    $element['#element_validate'] = array();
+  }
+
+  $form_state['#field_info'][$field['field_name']] = $field;
+  if (!empty($edit)) {
+    unset($element['select_other_list']);
+    unset($element['select_other_text_input']);
+  }
+
+  return $element;
+}
+
+/**
+ * Helper function for finding the allowed values list for a field.
+ *
+ * See if there is a module hook for the option values.
+ * Otherwise, try content_allowed_values() for an options list.
+ */
+function cck_select_other_options($field) {
+
+  $options = array();
+
+  $options_str = $field['widget']['select_list_options'];
+  if (!empty($options_str)) {
+    $options_arr = preg_split("/[\r]?[\n]/", $options_str);
+    if (count($options_arr) > 0) {
+      foreach($options_arr as $option_str) {
+        $option_arr = preg_split("/\|/", $option_str);
+        if (count($option_arr) == 2) {
+          $options[$option_arr[0]] = $option_arr[1];
+        }
+      }
+    }
+  }
+  if (!isset($options['other'])) {
+    $options['other'] = t('Other');
+  }
+
+  return $options;
+}
+
+/**
+ * Pre render callback for the form so we can recreate the fake form after it gets
+ * blown away by the CCK process callback.
+ * @param $form the form
+ * @return $form
+ */
+function cck_select_other_pre_render($form) {
+
+  unset($form['#default_value']);
+  unset($form['#value']);
+
+  $def = $form['select_other_text_input']['#value'];
+  $select_def = $form['select_other_list']['#value'];
+
+  $field = content_fields($form['#field_name']);
+  $delta = $form['#delta'];
+  $options = cck_select_other_options($field);
+
+  $form['select_other_list'] = array(
+    '#type' => 'select',
+    '#title' => t(''),
+    '#options' => $options,
+    '#default_value' => $select_def,
+  );
+  $form['select_other_text_input'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Specify other'),
+    '#default_value' => ($select_def == 'other') ? $def : '',
+  );
+
+  return $form;
+}
