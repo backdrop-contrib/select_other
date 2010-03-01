@@ -51,7 +51,7 @@ function cck_select_other_elements() {
   return array(
     'cck_select_other' => array(
       '#input' => TRUE,
-      '#pre_render' => array('cck_select_other_pre_render'),
+//      '#pre_render' => array('cck_select_other_pre_render'),
       '#columns' => array('value'), '#delta' => 0,
       '#process' => array('cck_select_other_process'),
       ),
