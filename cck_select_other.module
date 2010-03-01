@@ -51,7 +51,7 @@ function cck_select_other_elements() {
   return array(
     'cck_select_other' => array(
       '#input' => TRUE,
-//      '#pre_render' => array('cck_select_other_pre_render'),
+      '#pre_render' => array('cck_select_other_pre_render'),
       '#columns' => array('value'), '#delta' => 0,
       '#process' => array('cck_select_other_process'),
       ),
@@ -169,13 +169,16 @@ function cck_select_other_options($field) {
  */
 function cck_select_other_pre_render($form) {
 
+  if (is_array($form['select_other_list'])) {
+    return $form; 
+  }
   unset($form['#default_value']);
   unset($form['#value']);
 
-  $def = $form['select_other_text_input']['#value'];
-  $select_def = $form['select_other_list']['#value'];
-
   $field = content_fields($form['#field_name']);
+  $def = $form['#post'][$form['#field_name']]['select_other_text_input'];
+  $select_def = $form['#post'][$form['#field_name']]['select_other_list'];
+
   $delta = $form['#delta'];
   $options = cck_select_other_options($field);
 
@@ -184,6 +187,7 @@ function cck_select_other_pre_render($form) {
     '#title' => t(''),
     '#options' => $options,
     '#default_value' => $select_def,
+    '#weight' => -10,
   );
   $form['select_other_text_input'] = array(
     '#type' => 'textfield',
