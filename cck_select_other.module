@@ -100,8 +100,8 @@ function cck_select_other_widget(&$form, &$form_state, $field, $items, $delta = 
 function cck_select_other_process($element, $edit, &$form_state, $form) {
   $field_name = $element['#field_name'];
   $field = $form['#field_info'][$field_name];
-  $field_key  = $element['#columns'][0];
   $delta = $element['#delta'];
+  $field_key  = $element['#columns'][$delta];
 
   $element['#type'] = 'fieldset';
   unset($element['#value']);
@@ -182,18 +182,30 @@ function cck_select_other_pre_render($form) {
   $delta = $form['#delta'];
   $options = cck_select_other_options($field);
 
-  $form['select_other_list'] = array(
+  $new_form = array(
+    '#type' => 'fieldset',
+    '#title' => t($field['widget']['label']),
+    '#description' => $form['#description'],
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#delta' => $form['#delta'],
+    '#field_name' => $form['#field_name'],
+    '#type_name' => $form['#type_name'],
+    '#tree' => $form['#tree'],
+  );
+
+  $new_form['select_other_list'] = array(
     '#type' => 'select',
     '#title' => t(''),
     '#options' => $options,
     '#default_value' => $select_def,
     '#weight' => -10,
   );
-  $form['select_other_text_input'] = array(
+  $new_form['select_other_text_input'] = array(
     '#type' => 'textfield',
     '#title' => t('Specify other'),
     '#default_value' => ($select_def == 'other') ? $def : '',
   );
 
-  return $form;
+  return $new_form;
 }
