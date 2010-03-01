@@ -52,7 +52,8 @@ function cck_select_other_elements() {
     'cck_select_other' => array(
       '#input' => TRUE,
       '#pre_render' => array('cck_select_other_pre_render'),
-      '#columns' => array('value'), '#delta' => 0,
+      '#columns' => array('value'), 
+      '#delta' => 0,
       '#process' => array('cck_select_other_process'),
       ),
     );
@@ -101,7 +102,7 @@ function cck_select_other_process($element, $edit, &$form_state, $form) {
   $field_name = $element['#field_name'];
   $field = $form['#field_info'][$field_name];
   $delta = $element['#delta'];
-  $field_key  = $element['#columns'][$delta];
+  $field_key  = $element['#columns'][0];
 
   $element['#type'] = 'fieldset';
   unset($element['#value']);
