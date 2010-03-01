@@ -51,10 +51,10 @@ function cck_select_other_elements() {
   return array(
     'cck_select_other' => array(
       '#input' => TRUE,
-      '#pre_render' => array('cck_select_other_pre_render'),
       '#columns' => array('value'), 
       '#delta' => 0,
       '#process' => array('cck_select_other_process'),
+      '#pre_render' => array('cck_select_other_pre_render'),
       ),
     );
 }
@@ -85,7 +85,7 @@ function cck_select_other_widget(&$form, &$form_state, $field, $items, $delta = 
   $element['select_other_text_input'] = array(
     '#type' => 'textfield',
     '#title' => t('Specify other'),
-    '#default_value' => ($def == 'other') ? $items[$delta]['value'] : '',
+    '#default_value' => ($def == 'other') ? check_plain($items[$delta]['value']) : '',
   );
   return $element;
 }
@@ -179,7 +179,6 @@ function cck_select_other_pre_render($form) {
   $field = content_fields($form['#field_name']);
   $def = $form['#post'][$form['#field_name']]['select_other_text_input'];
   $select_def = $form['#post'][$form['#field_name']]['select_other_list'];
-
   $delta = $form['#delta'];
   $options = cck_select_other_options($field);
 
