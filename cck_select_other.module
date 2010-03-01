@@ -205,7 +205,7 @@ function cck_select_other_pre_render($form) {
   $new_form['select_other_text_input'] = array(
     '#type' => 'textfield',
     '#title' => t('Specify other'),
-    '#default_value' => ($select_def == 'other') ? $def : '',
+    '#default_value' => ($select_def == 'other') ? check_plain($def) : '',
   );
 
   return $new_form;
