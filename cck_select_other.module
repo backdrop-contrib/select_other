@@ -134,7 +134,7 @@ function cck_select_other_process($element, $edit, &$form_state, $form) {
 }
 
 /**
- * Helper function for finding the allowed values list for a field.
+ * Helper function for finding the options list for this field.
  *
  * See if there is a module hook for the option values.
  * Otherwise, try content_allowed_values() for an options list.
@@ -151,6 +151,9 @@ function cck_select_other_options($field) {
         $option_arr = preg_split("/\|/", $option_str);
         if (count($option_arr) == 2) {
           $options[$option_arr[0]] = $option_arr[1];
+        }
+        else {
+          $options["$option_arr[0]"] = $option_arr[0];
         }
       }
     }
