@@ -1,0 +1,122 @@
+<?php
+//$Id$
+
+/**
+ * @file test file for cck_select_other
+ *   Testing file
+ */
+
+
+/**
+ * SimpleTest class for cck_select_other
+ *
+ * We can't use cck's crud test because it has so much extra garbage with it.
+ * So we're going to have to start from scratch. :( Yay, for code sharing?
+ */
+class CCKSelectOtherTest extends DrupalWebTestCase {
+
+	private $test_node = NULL;
+  protected $test_field = array(
+    'field_name' => 'field_blah',
+    'type_name' => 'page',
+    'display_settings' => array(
+      'label' => array('format' => 'above', 'exclude' => '0'),
+      'teaser' => array('format' => 'default'),
+      'full' => array('format' => 'default'),
+      4 => array('format' => 'default'),
+    ),
+    'widget_active' => '1',
+    'type' => 'text',
+    'required' => '0',
+    'multiple' => '0',
+    'db_storage' => '1',
+    'module' => 'text',
+    'active' => '1',
+    'locked' => '0',
+    'columns' => array(
+      'value' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
+      ),
+    ),
+    'text_processing' => '0',
+    'max_length' => '',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'widget' => array(
+      'select_list_options' => "one\ntwo\nthree\nfour",
+      'default_value' => array(
+        0 => array(
+          'value' => 'one',
+        ),
+      ),
+      'default_value_php' => NULL,
+      'label' => 'Blah',
+      'weight' => NULL,
+      'description' => 'SimpleTest generated field.',
+      'type' => 'cck_select_other',
+      'module' => 'cck_select_other',
+    ),
+  );
+
+  /**
+   * Implementation of getInfo() method
+   * @return array 
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('CCK Select Other'),
+      'description' => t('Executes test suite for CCK Select Other module.'),
+      'group' => t('CCK'),
+    );
+  }
+
+  /**
+   * Implementation of setUp() method
+   */
+  public function setUp() {
+    parent::setUp('content', 'text', 'cck_select_other'); //enable cck modules
+    module_load_include('inc', 'content', 'includes/content.crud'); //include cck crud api
+    module_load_include('inc', 'content', 'includes/content.admin'); //include cck admin include
+
+    /* Setup a user */
+    $account = $this->drupalCreateUser( array('create page content', 'edit own page content', 'administer content types'));
+    $this->drupalLogin($account);
+
+    /* Create a field the hard way */
+		module_invoke_all('content_fieldapi', 'create instance', $this->test_field);
+    _content_field_write($this->test_field, 'create');
+		_content_field_instance_write($this->test_field, 'create');
+		content_alter_schema(array(), $this->test_field);
+		$my_field = content_fields('field_blah', 'page');
+		$this->assertEqual($this->test_field['field_name'], $my_field['field_name'], t('Field name @first is equal to @second. Field saved successfully.', array('@first' => $this->test_field['field_name'], '@second' => $my_field['field_name'])));
+
+		/* Create a node */
+    $edit = array(
+      'title' => $this->randomName(30),
+      'body' => $this->randomName(100),
+    );
+    $edit['field_blah'][0]['value'] = $this->randomName(16);
+
+		$node = $this->drupalCreateNode($edit);
+    $this->assertEqual($edit['field_blah'][0]['value'], $node->field_blah[0]['value'], t('Select other field data matches on initial node save.'));
+		$this->test_node = $node;
+  }
+
+  /**
+   * Implementation of tearDown() method
+   */
+  public function tearDown() {
+    parent::tearDown();
+  }
+
+  /**
+   * Initial test, save a node with a selected option
+   */
+  function testSelectFieldValue() {
+		$node = $this->test_node;
+  }
+}
