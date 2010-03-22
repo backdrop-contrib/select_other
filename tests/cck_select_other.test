@@ -85,7 +85,7 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
 		for($i = 0; $i < 4; $i++) {
 			$this->test_field['widget']['select_list_options'] .= $this->randomName(5)."\n";
 		}
-		rtrim($this->test_field['widget']['select_list_options']);
+		rtrim($this->test_field['widget']['select_list_options'], "\n");
 
     /* Create a field the hard way */
 		module_invoke_all('content_fieldapi', 'create instance', $this->test_field);
@@ -156,5 +156,40 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
 		$this->drupalPost('node/'.$node->nid.'/edit', $edit, t('Save'));
 		$node = node_load($node->nid, NULL, TRUE);
 		$this->assertEqual($node->field_blah[0]['value'], $my_option, t('Select other field data %field matches %match', array('%field' => $node->field_blah[0]['value'], '%match' => $my_option)));
+		$this->test_node = $node;
   }
+
+	/**
+	 * Fail validation of node edit form, check option values
+	 * TODO: I don't think I can resave the same form with drupalPost
+	 */
+	function testFailValidationForm() {
+		$node = $this->test_node;
+
+		$options = cck_select_other_options(content_fields('field_blah', 'page'));
+		$rand = rand(0, 4);
+		$i = 0;
+		foreach ($options as $key => $option) {
+			if ($i == $rand) {
+				$my_option = $key;
+			}
+			$i++;
+		}
+
+		$my_text_option = '';
+		$edit = array(
+			'title' => '',
+			'body' => $node->body,
+			'field_blah[select_other_list]' => $my_option,
+		);
+		if ($my_option == 'other') {
+			$edit['field_blah[select_other_text_input]'] = $this->randomName(16);
+			$my_text_option = $edit['field_blah[select_other_text_input]'];
+		}
+
+		$this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
+		$this->assertFieldById('edit-field-blah-select-other-list', $my_option, t('Select field value matches'));
+		$this->assertFieldById('edit-field-blah-select-other-text-input', $my_text_option, t('Text input field value matches'));
+
+	}
 }

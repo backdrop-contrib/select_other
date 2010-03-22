@@ -82,7 +82,8 @@ function cck_select_other_widget(&$form, &$form_state, $field, $items, $delta = 
 
   $element['select_other_list'] = array(
     '#type' => 'select',
-    '#title' => $field['field_name'],
+    '#title' => t(''),
+    '#description' => t('Select other to enter your own option.'),
     '#options' => $options,
     '#default_value' => $def,
   );
@@ -177,13 +178,14 @@ function cck_select_other_options($field) {
  */
 function cck_select_other_pre_render($form) {
 
-  if (is_array($form['select_other_list'])) {
+  if (isset($form['select_other_list'])) {
     return $form; 
   }
   unset($form['#default_value']);
   unset($form['#value']);
 
   $field = content_fields($form['#field_name']);
+	$field_name = substr($form['#field_name'], 6);
   $def = $form['#post'][$form['#field_name']]['select_other_text_input'];
   $select_def = $form['#post'][$form['#field_name']]['select_other_list'];
   $delta = $form['#delta'];
@@ -202,13 +204,21 @@ function cck_select_other_pre_render($form) {
   );
 
   $new_form['select_other_list'] = array(
+    '#id' => 'edit-field-'.$field_name.'-select-other-list',
+    '#name' => $form['#field_name'] . '[select_other_list]',
+    '#parents' => array('cck_select_other'),
     '#type' => 'select',
     '#title' => t(''),
+    '#description' => t('Select other to enter your own option.'),
     '#options' => $options,
     '#default_value' => $select_def,
+    '#value' => $select_def,
     '#weight' => -10,
   );
   $new_form['select_other_text_input'] = array(
+    '#id' => 'edit-field-'.$field_name.'-select-other-text-input',
+    '#name' => $form['#field_name'] . '[select_other_text_input]',
+    '#parents' => array('cck_select_other'),
     '#type' => 'textfield',
     '#title' => t('Specify other'),
     '#default_value' => ($select_def == 'other') ? check_plain($def) : '',
