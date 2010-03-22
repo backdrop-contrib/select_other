@@ -63,22 +63,26 @@ function cck_select_other_elements() {
  * Implementation of hook_widget().
  */
 function cck_select_other_widget(&$form, &$form_state, $field, $items, $delta = NULL) {
+	//FIXME: this is causing a warning on 1060 of form.inc for undefined #value index???
   $element = array(
     '#type' => $field['widget']['type'],
     '#default_value' => '',
   );
 
   $options = cck_select_other_options($field);
+	if (empty($items)) {
+		$items[] = array('value' => '');
+	}
   if (!isset($options[$items[$delta]['value']])) {
     $def = 'other';
   }
   else {
-    $def = $items[$delta]['value'];
+	  $def = $items[$delta]['value'];
   }
 
   $element['select_other_list'] = array(
     '#type' => 'select',
-    '#title' => $element['#field_name'],
+    '#title' => $field['field_name'],
     '#options' => $options,
     '#default_value' => $def,
   );
