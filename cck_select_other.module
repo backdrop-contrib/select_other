@@ -55,6 +55,7 @@ function cck_select_other_elements() {
       '#delta' => 0,
       '#process' => array('cck_select_other_process'),
       '#pre_render' => array('cck_select_other_pre_render'),
+      '#post_render' => array('cck_select_other_post_render'),
       ),
     );
 }
@@ -179,15 +180,24 @@ function cck_select_other_options($field) {
  * @return $form
  */
 function cck_select_other_pre_render($form) {
+  static $js;
 
   if (isset($form['select_other_list'])) {
     return $form; 
   }
+
+  $field_name = substr($form['#field_name'], 6);
+
+  if (!$js) {
+    drupal_add_js(array('CCKSelectOther' => array('field' => $field_name)), 'setting');
+    drupal_add_js(drupal_get_path('module', 'cck_select_other').'/cck_select_other.js');
+    $js = TRUE;
+  }
+
   unset($form['#default_value']);
   unset($form['#value']);
 
   $field = content_fields($form['#field_name']);
-	$field_name = substr($form['#field_name'], 6);
   $def = $form['#post'][$form['#field_name']]['select_other_text_input'];
   $select_def = $form['#post'][$form['#field_name']]['select_other_list'];
   $delta = $form['#delta'];
@@ -228,4 +238,23 @@ function cck_select_other_pre_render($form) {
   );
 
   return $new_form;
+}
+
+/**
+ * Post-render callback to add javascript functionality
+ * @param $form
+ * @return $form
+ */
+function cck_select_other_post_render($content, $elements) {
+  static $js;
+
+  $field_name = substr($elements['#field_name'], 6);
+
+  if (!$js) {
+    drupal_add_js(array('CCKSelectOther' => array('field' => $field_name)), 'setting');
+    drupal_add_js(drupal_get_path('module', 'cck_select_other').'/cck_select_other.js');
+    $js = TRUE;
+  }
+
+  return $content;
 }
