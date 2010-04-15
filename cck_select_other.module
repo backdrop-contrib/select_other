@@ -63,7 +63,6 @@ function cck_select_other_elements() {
  * Implementation of hook_widget().
  */
 function cck_select_other_widget(&$form, &$form_state, $field, $items, $delta = NULL) {
-	//FIXME: this is causing a warning on 1060 of form.inc for undefined #value index???
   $element = array(
     '#type' => $field['widget']['type'],
     '#default_value' => '',
@@ -110,7 +109,7 @@ function cck_select_other_process($element, $edit, &$form_state, $form) {
   $field_key  = $element['#columns'][0];
 
   $element['#type'] = 'fieldset';
-  unset($element['#value']);
+  unset($element['#value']); //FIXME: still necessary? See new else block down below...
   $element['#collapsible'] = TRUE;
   $element['#collapsed'] = FALSE;
 
@@ -123,6 +122,9 @@ function cck_select_other_process($element, $edit, &$form_state, $form) {
     $element['#value'] = array(array('value' => $edit['select_other_list']));
     $form_state['values'][$field_name] = $element['#value'][$delta];
     $form_state['clicked_button']['#post'][$field_name] = $element['#value'][$delta];
+  }
+  else {
+    $element['#value'] = '';
   }
 
   if (empty($element['#element_validate'])) {
