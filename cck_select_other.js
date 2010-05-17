@@ -10,7 +10,7 @@ Drupal.behaviors.cckSelectOther = function (context) {
 
 //  $.browser.msie == true ? $(this).click(Drupal.ConditionalFields.fieldChange) : $(this).change(Drupal.ConditionalFields.fieldChange); 
 
-  $.browser.msie == true ? $(this).click(cckSelectOther.blah) : $(this).change(cckSelectOther.blah);
+  $.browser.msie == true ? $(this).click(cckSelectOther.switch) : $(this).change(cckSelectOther.switch);
 
   var selectId = 'edit-field-'+Drupal.settings.CCKSelectOther.field+'-select-other-list';
   var inputId = 'edit-field-'+Drupal.settings.CCKSelectOther.field+'-select-other-text-input-wrapper';
@@ -25,7 +25,7 @@ Drupal.behaviors.cckSelectOther = function (context) {
 
 }
 
-cckSelectOther.blah = function () {
+cckSelectOther.switch = function () {
   var selectId = 'edit-field-'+Drupal.settings.CCKSelectOther.field+'-select-other-list';
   var inputId = 'edit-field-'+Drupal.settings.CCKSelectOther.field+'-select-other-text-input-wrapper';
   var value = $('#'+selectId+' option:selected').val();
