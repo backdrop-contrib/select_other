@@ -12,28 +12,42 @@ Drupal.behaviors.cckSelectOther = function (context) {
 
   $.browser.msie == true ? $(this).click(cckSelectOther.switch) : $(this).change(cckSelectOther.switch);
 
-  var selectId = 'edit-field-'+Drupal.settings.CCKSelectOther.field+'-select-other-list';
-  var inputId = 'edit-field-'+Drupal.settings.CCKSelectOther.field+'-select-other-text-input-wrapper';
-  var value = $('#'+selectId+' option:selected').val();
+//  document.write(Drupal.settings.CCKSelectOther.field.length);
+  var field_str = new String(Drupal.settings.CCKSelectOther.field);
+  var fields = new Array();
+  fields = field_str.split(',');
 
-  if (value == "other") {
-    document.getElementById(inputId).style.display = 'block';
-  }
-  else {
-    document.getElementById(inputId).style.display = 'none';
+  // i is our index
+  for (i in fields) {
+    var selectId = 'edit-field-'+fields[i]+'-select-other-list';
+    var inputId = 'edit-field-'+fields[i]+'-select-other-text-input-wrapper';
+    var value = $('#'+selectId+' option:selected').val();
+
+    if (value == "other") {
+      document.getElementById(inputId).style.display = 'block';
+    }
+    else {
+      document.getElementById(inputId).style.display = 'none';
+    }
   }
 
 }
 
 cckSelectOther.switch = function () {
-  var selectId = 'edit-field-'+Drupal.settings.CCKSelectOther.field+'-select-other-list';
-  var inputId = 'edit-field-'+Drupal.settings.CCKSelectOther.field+'-select-other-text-input-wrapper';
-  var value = $('#'+selectId+' option:selected').val();
+  var field_str = new String(Drupal.settings.CCKSelectOther.field);
+  var fields = new Array();
+  fields = field_str.split(',');
 
-  if (value == "other") {
-    document.getElementById(inputId).style.display = 'block';
-  }
-  else {
-    document.getElementById(inputId).style.display = 'none';
+  for (i in fields) {
+    var selectId = 'edit-field-'+fields[i]+'-select-other-list';
+    var inputId = 'edit-field-'+fields[i]+'-select-other-text-input-wrapper';
+    var value = $('#'+selectId+' option:selected').val();
+
+    if (value == "other") {
+      document.getElementById(inputId).style.display = 'block';
+    }
+    else {
+      document.getElementById(inputId).style.display = 'none';
+    }
   }
 }

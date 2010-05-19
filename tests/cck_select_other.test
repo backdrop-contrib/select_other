@@ -190,6 +190,6 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
 		$this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
 		$this->assertFieldById('edit-field-blah-select-other-list', $my_option, t('Select field value matches'));
 		$this->assertFieldById('edit-field-blah-select-other-text-input', $my_text_option, t('Text input field value matches'));
-
 	}
+
 }
