@@ -19,16 +19,14 @@ Drupal.behaviors.cckSelectOther = function (context) {
 
   // i is our index
   for (i in fields) {
-    var selectId = 'edit-field-'+fields[i]+'-select-other-list';
-    var inputId = 'edit-field-'+fields[i]+'-select-other-text-input-wrapper';
-    var value = $('#'+selectId+' option:selected').val();
+    var field = fields[i].replace(/_/g, '-');
 
-    if (value == "other") {
-      document.getElementById(inputId).style.display = 'block';
-    }
-    else {
-      document.getElementById(inputId).style.display = 'none';
-    }
+    var selectId = 'edit-field-' + field + '-select-other-list';
+    var inputId = 'edit-field-' + field + '-select-other-text-input-wrapper';
+    var value = $('#' + selectId + ' option:selected').val();
+
+    // if value == other then display as block else don't display
+    $('#' + inputId).css('display', (value == "other") ? 'block' : 'none');
   }
 
 }
@@ -39,15 +37,13 @@ cckSelectOther.switch = function () {
   fields = field_str.split(',');
 
   for (i in fields) {
-    var selectId = 'edit-field-'+fields[i]+'-select-other-list';
-    var inputId = 'edit-field-'+fields[i]+'-select-other-text-input-wrapper';
-    var value = $('#'+selectId+' option:selected').val();
+    var field = fields[i].replace(/_/g, '-');
 
-    if (value == "other") {
-      document.getElementById(inputId).style.display = 'block';
-    }
-    else {
-      document.getElementById(inputId).style.display = 'none';
-    }
+    var selectId = 'edit-field-' + field + '-select-other-list';
+    var inputId = 'edit-field-' + field + '-select-other-text-input-wrapper';
+    var value = $('#' + selectId + ' option:selected').val();
+
+    // if value == other then display as block else don't display
+    $('#' + inputId).css('display', (value == "other") ? 'block' : 'none');
   }
 }
