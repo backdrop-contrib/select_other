@@ -48,6 +48,7 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     'allowed_values_php' => '',
     'widget' => array(
       'select_list_options' => '',
+      'select_list_options_php' => '',
       'default_value_php' => NULL,
       'label' => 'Blah',
       'weight' => NULL,
@@ -191,5 +192,36 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
 		$this->assertFieldById('edit-field-blah-select-other-list', $my_option, t('Select field value matches'));
 		$this->assertFieldById('edit-field-blah-select-other-text-input', $my_text_option, t('Text input field value matches'));
 	}
+
+  /**
+   * Fail validation or test allowed values for other option
+   */
+  function testAllowedValues() {
+    //Setup some allowed values to equal our select list options + another known value
+    $this->test_field['allowed_values'] = $this->test_field['widget']['select_list_options'] . "\nAllowedValue";
+    _content_field_write($this->test_field, 'update');
+    _content_field_instance_write($this->test_field, 'update');
+    content_alter_schema(array(), $this->test_field);
+		$my_field = content_fields('field_blah', 'page');
+		$this->assertEqual($this->test_field['field_name'], $my_field['field_name'], t('Field name @first is equal to @second. Field updated successfully.', array('@first' => $this->test_field['field_name'], '@second' => $my_field['field_name'])));
+
+    $node = $this->test_node;
+		$edit = array(
+			'title' => $node->title,
+			'body' => $node->body,
+			'field_blah[select_other_list]' => 'other',
+      'field_blah[select_other_text_input]' => 'DisallowedValue',
+		);
+    $saved_edit = $edit;
+
+    // try to save a disallowed value
+		$this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
+    $this->assertRaw(t('illegal value'), t('Successfully blocked submission of DisallowedValue.'));
+
+    // try to save an allowed value
+    $edit['field_blah[select_other_text_input]'] = 'AllowedValue';
+    $this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
+    $this->assertNoRaw(t('illegal value'), t('Successfully saved form with allowed value, AllowedValue.'));
+  }
 
 }
