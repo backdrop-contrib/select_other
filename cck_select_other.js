@@ -21,6 +21,7 @@ Drupal.behaviors.cckSelectOther = function (context) {
   for (i in fields) {
     var field = fields[i].replace(/_/g, '-');
 
+    //@todo selectId and inputId may be modified, as seen in flexifield
     var selectId = 'edit-field-' + field + '-select-other-list';
     var inputId = 'edit-field-' + field + '-select-other-text-input-wrapper';
     var value = $('#' + selectId + ' option:selected').val();
@@ -39,6 +40,7 @@ cckSelectOther.switch = function () {
   for (i in fields) {
     var field = fields[i].replace(/_/g, '-');
 
+    //@todo selectId and inputId may be modified, as seen in flexifield
     var selectId = 'edit-field-' + field + '-select-other-list';
     var inputId = 'edit-field-' + field + '-select-other-text-input-wrapper';
     var value = $('#' + selectId + ' option:selected').val();

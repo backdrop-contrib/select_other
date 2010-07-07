@@ -26,7 +26,7 @@ function cck_select_other_update_6001(&$sandbox) {
     $sandbox['max'] = $i;
   }
 
-  module_load_include('inc', 'content', 'content.crud');
+  module_load_include('inc', 'content', 'includes/content.crud');
 
   $fields[$sandbox['progress']]['widget']['select_list_options_php'] = '';
   _content_field_write($fields[$sandbox['progress']], 'update');
