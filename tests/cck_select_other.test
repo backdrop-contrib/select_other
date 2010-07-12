@@ -15,7 +15,7 @@
  */
 class CCKSelectOtherTest extends DrupalWebTestCase {
 
-	private $test_node = NULL;
+  private $test_node = NULL;
   protected $test_field = array(
     'field_name' => 'field_blah',
     'type_name' => 'page',
@@ -37,9 +37,9 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
       'value' => array(
         'type' => 'text',
         'size' => 'big',
-        'not null' => false,
-        'sortable' => true,
-        'views' => true,
+        'not null' => FALSE,
+        'sortable' => TRUE,
+        'views' => TRUE,
       ),
     ),
     'text_processing' => '0',
@@ -82,44 +82,44 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     $account = $this->drupalCreateUser( array('create page content', 'edit own page content', 'administer content types'));
     $this->drupalLogin($account);
 
-		/* Additional field setup */
-		for($i = 0; $i < 4; $i++) {
-			$this->test_field['widget']['select_list_options'] .= $this->randomName(5)."\n";
-		}
-		rtrim($this->test_field['widget']['select_list_options'], "\n");
+    /* Additional field setup */
+    for ($i = 0; $i < 4; $i++) {
+      $this->test_field['widget']['select_list_options'] .= $this->randomName(5) . "\n";
+    }
+    rtrim($this->test_field['widget']['select_list_options'], "\n");
 
     /* Create a field the hard way */
-		module_invoke_all('content_fieldapi', 'create instance', $this->test_field);
+    module_invoke_all('content_fieldapi', 'create instance', $this->test_field);
     _content_field_write($this->test_field, 'create');
-		_content_field_instance_write($this->test_field, 'create');
-		content_alter_schema(array(), $this->test_field);
-		$my_field = content_fields('field_blah', 'page');
-		$this->assertEqual($this->test_field['field_name'], $my_field['field_name'], t('Field name @first is equal to @second. Field saved successfully.', array('@first' => $this->test_field['field_name'], '@second' => $my_field['field_name'])));
+    _content_field_instance_write($this->test_field, 'create');
+    content_alter_schema(array(), $this->test_field);
+    $my_field = content_fields('field_blah', 'page');
+    $this->assertEqual($this->test_field['field_name'], $my_field['field_name'], t('Field name @first is equal to @second. Field saved successfully.', array('@first' => $this->test_field['field_name'], '@second' => $my_field['field_name'])));
 
-		/* Create a node */
+    /* Create a node */
     $edit = array(
       'title' => $this->randomName(30),
       'body' => $this->randomName(100),
     );
-		$options = cck_select_other_options(content_fields('field_blah', 'page'));
-		$rand = rand(0, 4);
-		$a = 0;
-		foreach ($options as $key => $option) {
-			if ($a == $rand) {
-				if ($key == 'other') {
-					$my_option = $this->randomName(16);
-				}
-				else {
-					$my_option = $key;
-				}
-			}
-			$a++;
-		}
+    $options = cck_select_other_options(content_fields('field_blah', 'page'));
+    $rand = rand(0, 4);
+    $a = 0;
+    foreach ($options as $key => $option) {
+      if ($a == $rand) {
+        if ($key == 'other') {
+          $my_option = $this->randomName(16);
+        }
+        else {
+          $my_option = $key;
+        }
+      }
+      $a++;
+    }
     $edit['field_blah'][0]['value'] = $my_option;
 
-		$node = $this->drupalCreateNode($edit);
+    $node = $this->drupalCreateNode($edit);
     $this->assertEqual($edit['field_blah'][0]['value'], $node->field_blah[0]['value'], t('Select other field data matches on initial node save.'));
-		$this->test_node = $node;
+    $this->test_node = $node;
   }
 
   /**
@@ -133,65 +133,65 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
    * Modify node with a new value from select list options
    */
   function testSelectFieldValue() {
-		$node = $this->test_node;
+    $node = $this->test_node;
 
-		$options = cck_select_other_options(content_fields('field_blah', 'page'));
-		$rand = rand(0, 4);
-		$i = 0;
-		foreach ($options as $key => $option) {
-			if ($i == $rand) {
-				$my_option = $key;
-			}
-			$i++;
-		}
+    $options = cck_select_other_options(content_fields('field_blah', 'page'));
+    $rand = rand(0, 4);
+    $i = 0;
+    foreach ($options as $key => $option) {
+      if ($i == $rand) {
+        $my_option = $key;
+      }
+      $i++;
+    }
 
-		$edit = array(
-			'title' => $node->title,
-			'body' => $node->body,
-			'field_blah[select_other_list]' => $my_option,
-		);
-		if ($my_option == 'other') {
-			$edit['field_blah[select_other_text_input]'] = $this->randomName(16);
-		}
+    $edit = array(
+      'title' => $node->title,
+      'body' => $node->body,
+      'field_blah[select_other_list]' => $my_option,
+    );
+    if ($my_option == 'other') {
+      $edit['field_blah[select_other_text_input]'] = $this->randomName(16);
+    }
 
-		$this->drupalPost('node/'.$node->nid.'/edit', $edit, t('Save'));
-		$node = node_load($node->nid, NULL, TRUE);
-		$this->assertEqual($node->field_blah[0]['value'], $my_option, t('Select other field data %field matches %match', array('%field' => $node->field_blah[0]['value'], '%match' => $my_option)));
-		$this->test_node = $node;
+    $this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
+    $node = node_load($node->nid, NULL, TRUE);
+    $this->assertEqual($node->field_blah[0]['value'], $my_option, t('Select other field data %field matches %match', array('%field' => $node->field_blah[0]['value'], '%match' => $my_option)));
+    $this->test_node = $node;
   }
 
-	/**
-	 * Fail validation of node edit form, check option values
-	 * TODO: I don't think I can resave the same form with drupalPost
-	 */
-	function testFailValidationForm() {
-		$node = $this->test_node;
+  /**
+   * Fail validation of node edit form, check option values
+   * TODO: I don't think I can resave the same form with drupalPost
+   */
+  function testFailValidationForm() {
+    $node = $this->test_node;
 
-		$options = cck_select_other_options(content_fields('field_blah', 'page'));
-		$rand = rand(0, 4);
-		$i = 0;
-		foreach ($options as $key => $option) {
-			if ($i == $rand) {
-				$my_option = $key;
-			}
-			$i++;
-		}
+    $options = cck_select_other_options(content_fields('field_blah', 'page'));
+    $rand = rand(0, 4);
+    $i = 0;
+    foreach ($options as $key => $option) {
+      if ($i == $rand) {
+        $my_option = $key;
+      }
+      $i++;
+    }
 
-		$my_text_option = '';
-		$edit = array(
-			'title' => '',
-			'body' => $node->body,
-			'field_blah[select_other_list]' => $my_option,
-		);
-		if ($my_option == 'other') {
-			$edit['field_blah[select_other_text_input]'] = $this->randomName(16);
-			$my_text_option = $edit['field_blah[select_other_text_input]'];
-		}
+    $my_text_option = '';
+    $edit = array(
+      'title' => '',
+      'body' => $node->body,
+      'field_blah[select_other_list]' => $my_option,
+    );
+    if ($my_option == 'other') {
+      $edit['field_blah[select_other_text_input]'] = $this->randomName(16);
+      $my_text_option = $edit['field_blah[select_other_text_input]'];
+    }
 
-		$this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
-		$this->assertFieldById('edit-field-blah-select-other-list', $my_option, t('Select field value matches'));
-		$this->assertFieldById('edit-field-blah-select-other-text-input', $my_text_option, t('Text input field value matches'));
-	}
+    $this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
+    $this->assertFieldById('edit-field-blah-select-other-list', $my_option, t('Select field value matches'));
+    $this->assertFieldById('edit-field-blah-select-other-text-input', $my_text_option, t('Text input field value matches'));
+  }
 
   /**
    * Fail validation or test allowed values for other option
@@ -202,20 +202,20 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     _content_field_write($this->test_field, 'update');
     _content_field_instance_write($this->test_field, 'update');
     content_alter_schema(array(), $this->test_field);
-		$my_field = content_fields('field_blah', 'page');
-		$this->assertEqual($this->test_field['field_name'], $my_field['field_name'], t('Field name @first is equal to @second. Field updated successfully.', array('@first' => $this->test_field['field_name'], '@second' => $my_field['field_name'])));
+    $my_field = content_fields('field_blah', 'page');
+    $this->assertEqual($this->test_field['field_name'], $my_field['field_name'], t('Field name @first is equal to @second. Field updated successfully.', array('@first' => $this->test_field['field_name'], '@second' => $my_field['field_name'])));
 
     $node = $this->test_node;
-		$edit = array(
-			'title' => $node->title,
-			'body' => $node->body,
-			'field_blah[select_other_list]' => 'other',
+    $edit = array(
+      'title' => $node->title,
+      'body' => $node->body,
+      'field_blah[select_other_list]' => 'other',
       'field_blah[select_other_text_input]' => 'DisallowedValue',
-		);
+    );
     $saved_edit = $edit;
 
     // try to save a disallowed value
-		$this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
+    $this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
     $this->assertRaw(t('illegal value'), t('Successfully blocked submission of DisallowedValue.'));
 
     // try to save an allowed value

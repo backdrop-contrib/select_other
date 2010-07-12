@@ -2,6 +2,7 @@
 //$Id$
 
 /**
+ * @file
  * Implementation of hook_update_N().
  * This will update all cck_select_other widget fields to include
  * a select_list_options_php option. Without this each field will
