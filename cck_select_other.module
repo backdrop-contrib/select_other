@@ -216,46 +216,6 @@ function cck_select_other_process($element, &$form_state) {
 }
 
 /**
-function cck_select_other_process($element, $edit, &$form_state, $form) {
-  $field_name = $element['#field_name'];
-  $field = $form['#field_info'][$field_name];
-  $delta = $element['#delta'];
-  $field_key  = $element['#columns'][0];
-
-  $element['#type'] = 'fieldset';
-  unset($element['#value']); //FIXME: still necessary? See new else block down below...
-  $element['#collapsible'] = TRUE;
-  $element['#collapsed'] = FALSE;
-
-  if ($edit['select_other_list'] == 'other' && !empty($edit['select_other_text_input']) && !empty($edit)) {
-    $element['#value'] = array(array('value' => $edit['select_other_text_input']));
-    $form_state['values'][$field_name] = $element['#value'][$delta];
-    $form_state['clicked_button']['#post'][$field_name] = $element['#value'][$delta];
-  }
-  elseif (!empty($edit)) {
-    $element['#value'] = array(array('value' => $edit['select_other_list']));
-    $form_state['values'][$field_name] = $element['#value'][$delta];
-    $form_state['clicked_button']['#post'][$field_name] = $element['#value'][$delta];
-  }
-  else {
-    $element['#value'] = '';
-  }
-
-  if (empty($element['#element_validate'])) {
-    $element['#element_validate'] = array();
-  }
-
-  $form_state['#field_info'][$field['field_name']] = $field;
-  if (!empty($edit)) {
-    unset($element['select_other_list']);
-    unset($element['select_other_text_input']);
-  }
-
-  return $element;
-}
-*/
-
-/**
  * Pre render callback for the form so we can recreate the fake form after it gets
  * blown away by the CCK process callback.
  * @param $element the element
@@ -285,51 +245,6 @@ function cck_select_other_pre_render($element, $form_state = NULL) {
   else {
     drupal_add_js(array('CCKSelectOther' => array('field' => $field_name, 'lang' => $langcode, 'delta' => $delta)), array('type' => 'setting'));
   }
-/*
-  $def = $form_state['values'][$field_name][$langcode][$delta]['value'];
-  $select_def = $form_state['values'][$field_name][$langcode][$delta]['value'];
-
-  $options = cck_select_other_options($element, $form_state);
-
-  $form = array(
-    '#type' => 'fieldset',
-    '#title' => t($field['widget']['label']),
-    '#description' => $form['#description'],
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-    '#delta' => $form['#delta'],
-    '#field_name' => $form['#field_name'],
-    '#type_name' => $form['#type_name'],
-    '#tree' => $form['#tree'],
-  );
-
-  $form['select_other_list'] = array(
-    '#id' => 'edit-field-' . $field_name . '-select-other-list',
-    '#name' => $form['#field_name'] . '[select_other_list]',
-    '#parents' => array('cck_select_other'),
-    '#type' => 'select',
-    '#title' => t(''),
-    '#description' => t('Select other to enter your own option.'),
-    '#options' => $options,
-    '#default_value' => $select_def,
-    '#value' => $select_def,
-    '#weight' => -10,
-  );
-
-  $form['select_other_text_input'] = array(
-    '#id' => 'edit-field-' . $field_name . '-select-other-text-input',
-    '#name' => $form['#field_name'] . '[select_other_text_input]',
-    '#parents' => array('cck_select_other'),
-    '#type' => 'textfield',
-    '#title' => t('Specify other'),
-    '#default_value' => ($select_def == 'other') ? check_plain($def) : '',
-    '#value' => ($select_def == 'other') ? check_plain($def) : '',
-  );
-
-  return $form;
-*/
-
-  return $element;
 }
 
 /**
@@ -359,4 +274,23 @@ function cck_select_other_post_render($content, $element) {
   }
 
   return $content;
+}
+
+/**
+ * Implementation of hook_content_migrate_field_alter().
+ */
+function cck_select_other_content_migrate_field_alter(&$field_value) {
+  if ($field_value['type'] == 'cck_select_other') {
+    $field_value['type'] = 'list_text';
+    $field_value['module'] = 'list';
+  }
+}
+
+/**
+ * Implementation of hook_content_migrate_instance_alter().
+ */
+function cck_select_other_content_migrate_instance_alter(&$instance_value) {
+  if ($instance_value['widget']['module'] == 'cck_select_other') {
+    // Yay! We actually don't need to do anything. But I'm going to call this anyway.
+  }
 }
