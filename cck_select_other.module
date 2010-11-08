@@ -294,3 +294,13 @@ function cck_select_other_content_migrate_instance_alter(&$instance_value) {
     // Yay! We actually don't need to do anything. But I'm going to call this anyway.
   }
 }
+
+/**
+ * Implementation of hook_views_api().
+ */
+function cck_select_other_views_api() {
+  return array(
+    'api' => '3',
+    'path' => drupal_get_path('module', 'cck_select_other') . '/views',
+  );
+}
