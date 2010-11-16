@@ -13,6 +13,12 @@
  */
 class CCKSelectOtherTest extends DrupalWebTestCase {
 
+  public $contentType = NULL;
+  public $test_node = NULL;
+  public $test_instance = NULL;
+  public $test_field = NULL;
+  public $options = NULL;
+
   /**
    * Implementation of getInfo() method
    * @return array 
@@ -20,7 +26,7 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
   public static function getInfo() {
     return array(
       'name' => t('CCK Select Other'),
-      'description' => t('Executes test suite for CCK Select Other module.'),
+      'description' => t('Confirms that there are 5 options available. Used as a base class.'),
       'group' => t('Field UI'),
     );
   }
@@ -29,12 +35,15 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
    * Implementation of setUp() method
    */
   public function setUp() {
-    parent::setUp('field_ui', 'list', 'cck_select_other'); //enable field api modules
+    parent::setUp(array('cck_select_other'));
+//    parent::setUp('field', 'field_ui', 'list', 'options', 'cck_select_other'); //enable field api modules
+
+    $this->assertTrue(module_exists('cck_select_other'), t('CCK Select Other module is enabled.'));
 
     $content_type = strtolower($this->randomName(5));
 
     /* Setup an admin user */
-    $this->admin_user = $this->drupalCreateUser( array('administer content types'));
+    $this->admin_user = $this->drupalCreateUser( array('administer content types', 'administer site configuration'));
     $this->drupalLogin($this->admin_user);
 
     /* Create a new content type */
@@ -43,53 +52,46 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     );
     $this->contentType = $this->drupalCreateContentType($settings);
 
-    /* Setup field */
-    $this->field = array(
-      'field_name' => 'field_' . strtolower($this->randomName(5)),
-      'type' => 'list_text',
-      'active' => 1,
-      'settings' => array(
-        'allowed_values' => '',
-      ),
-    );
-    $this->field = field_create_field($this->field);
-    $this->assertNotNull($this->field['id'], t('Successfully created field, %name, programmatically.', array('%name' => $this->field['field_name'])));
-
-    /* Setup field instance on content type */
-    $this->instance = array(
-      'field_name' => $this->field['field_name'],
-      'entity_type' => 'node',
-      'label' => 'Select Other List',
-      'bundle' => $this->contentType->type,
-      'required' => false,
-      'widget' => array(
-        'type' => 'cck_select_other',
-        'settings' => array(
-          'select_list_options' => '',
-          'select_list_options_php' => '',
-          'default_value_php' => NULL,
-        ),
-      ),
-      'display' => array(
-        'default' => array('type' => 'visible'),
-        'teaser' => array('type' => 'visible'),
-      ),
-    );
-
-    /* Additional field setup */
+    /* Create some options for our select other list */
+    $this->options = '';
     for ($i = 0; $i < 4; $i++) {
-      $this->instance['widget']['settings']['select_list_options'] .= $this->randomName(5) . "\n";
-    }
-    rtrim($this->instance['widget']['settings']['select_list_options'], "\n");
+      $this->options .= $this->randomName(5);
+      if ($i < 3) {
+        $this->options .= "\n";
+      }
+    } 
+    
+    /* Create a new field on our content type */
+    $field_label = $this->randomName(5);
+    $field_name = strtolower($this->randomName(5));
+    $bundle_path = 'admin/structure/types/manage/' . $this->contentType->type;
+    $edit = array(
+      'fields[_add_new_field][label]' => $field_label,
+      'fields[_add_new_field][field_name]' => $field_name,
+      'fields[_add_new_field][type]' => 'list_text',
+      'fields[_add_new_field][widget_type]' => 'cck_select_other',
+    );
+    $this->drupalPost($bundle_path . '/fields', $edit, 'Save');
+    $edit = array(
+      'instance[widget][settings][select_list_options]' => $this->options,
+    );
+    $this->drupalPost($bundle_path . '/fields/field_' . $field_name, $edit, 'Save settings');
 
-    /* Create field instance */
-    $this->instance = field_create_instance($this->instance);
-
-    $this->assertNotNull($this->instance['field_id'], t('Successfully created field instance, %name, programmatically.', array('%name' => $this->instance['field_name'])));
+    $this->test_field = field_info_field('field_' . $field_name);
+    $this->test_instance = field_info_instance('node', 'field_' . $field_name, $this->contentType->type);
 
     /* Setup a web user that can create content */
     // @todo bypass node access seems to be the only thing that does not return 403
-    $this->web_user = $this->drupalCreateUser(array('access content', 'create ' . $this->contentType->type . ' content', 'bypass node access'));
+    $this->web_user = $this->drupalCreateUser(array('access content', 'create ' . $this->contentType->type . ' content', 'delete any ' . $this->contentType->type . ' content', 'bypass node access'));
+
+    $this->drupalLogout();
+
+    $this->drupalLogin($this->web_user);
+
+    $settings = array(
+      'type' => $this->contentType->type,
+    );
+    $this->test_node = $this->drupalCreateNode($settings);
 
     $this->drupalLogout();
   }
@@ -98,36 +100,61 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
    * Implementation of tearDown() method
    */
   public function tearDown() {
+    $this->drupalLogin($this->web_user);
+    $this->drupalPost('node/' . $this->test_node->nid . '/delete', array('confirm' => 1), 'Delete');
+    $this->drupalLogout();
+
+    $this->drupalLogin($this->admin_user);
+    field_delete_field($this->test_field['field_name']);
+    $this->drupalLogout();
+
+    $this->test_node = NULL;
+    $this->test_field = NULL;
+    $this->test_instance = NULL;
+    $this->admin_user = NULL;
+    $this->web_user = NULL;
+    $this->options = NULL;
+
     parent::tearDown();
+  }
+
+  /**
+   * Basic test
+   */
+  function testSelectOtherOptions() {
+    $options_arr = cck_select_other_options($this->test_instance);
+    $this->assertEqual(5, count($options_arr), t('There are 5 = %count options set on the field.', array('%count' => count($options_arr))));
+  }
+}
+
+/**
+ * @class
+ * CCK Select Other Basic Test Case
+ */
+class CCKSelectOtherBasicTest extends CCKSelectOtherTest {
+
+  static public function getInfo() {
+    return array(
+      'name' => t('CCK Select Other Basic Test'),
+      'description' => t('Test saving values with the CCK Select Other widget.'),
+      'group' => t('Field UI'),
+    );
   }
 
   /**
    * Modify node with a new value from select list options
    */
   function testSelectFieldValue() {
+    $options_arr = cck_select_other_options($this->test_instance);
+    $this->assertEqual(5, count($options_arr), t('There are 5 = %count options set on the field.', array('%count' => count($options_arr))));
+
+    $my_option = array_rand(cck_select_other_options($this->test_instance));
+
     $this->drupalLogin($this->web_user);
 
-    $settings = array(
-      'type' => $this->contentType->type,
-    );
-    $this->node = $this->drupalCreateNode($settings);
-
-    $options = cck_select_other_options($this->instance);
-
-    $rand = rand(0, 4);
-    $i = 0;
-    foreach ($options as $key => $option) {
-      if ($i == $rand) {
-        $my_option = $key;
-      }
-      $i++;
-    }
-
-    $this->drupalGet('node/' . $this->node->nid . '/edit');
-
     // @todo sometimes 'und' is undefined...
-    $select_field = $this->field['field_name'] . '[und][0][select_other_list]';
-    $text_field = $this->field['field_name'] . '[und][0][select_other_text_input]';
+    $select_field = $this->test_field['field_name'] . '[und][0][select_other_list]';
+    $text_field = $this->test_field['field_name'] . '[und][0][select_other_text_input]';
     $edit = array(
       $select_field => $my_option,
     );
@@ -135,9 +162,10 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
       $edit[$text_field] = $this->randomName(16);
     }
 
-    $this->drupalPost('node/' . $this->node->nid . '/edit', $edit, t('Save'));
-    $this->node = node_load($this->node->nid, NULL, TRUE);
-    $this->assertRaw($this->node->{$this->field['field_name']}['und'][0]['value'], $my_option, t('Select other field data %field matches %match', array('%field' => $this->node->{$this->field['field_name']}['und'][0]['value'], '%match' => $my_option)));
+    $this->drupalGet('node/' . $this->test_node->nid);
+    $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
+    $this->test_node = node_load($this->test_node->nid, NULL, TRUE);
+    $this->assertRaw($this->test_node->{$this->test_field['field_name']}['und'][0]['value'], $my_option, t('Select other field data %field matches %match', array('%field' => $this->test_node->{$this->test_field['field_name']}['und'][0]['value'], '%match' => $my_option)));
 
     $this->drupalLogout();
   }
@@ -147,25 +175,12 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
    * TODO: I don't think I can resave the same form with drupalPost
    */
   function testFailValidationForm() {
+    $my_option = array_rand(cck_select_other_options($this->test_instance));
+
     $this->drupalLogin($this->web_user);
 
-    $settings = array(
-      'type' => $this->contentType->type,
-    );
-    $this->node = $this->drupalCreateNode($settings);
-
-    $options = cck_select_other_options($this->instance);
-    $rand = rand(0, 4);
-    $i = 0;
-    foreach ($options as $key => $option) {
-      if ($i == $rand) {
-        $my_option = $key;
-      }
-      $i++;
-    }
-
-    $select_field = $this->field['field_name'] . '[und][0][select_other_list]';
-    $text_field = $this->field['field_name'] . '[und][0][select_other_text_input]';
+    $select_field = $this->test_field['field_name'] . '[und][0][select_other_list]';
+    $text_field = $this->test_field['field_name'] . '[und][0][select_other_text_input]';
     $edit = array(
       'title' => '',
       $select_field => $my_option,
@@ -174,11 +189,26 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
       $edit[$text_field] = $this->randomName(16);
     }
 
-    $field_str = str_replace('_', '-', $this->field['field_name']);
-    $this->drupalPost('node/' . $this->node->nid . '/edit', $edit, t('Save'));
+    $field_str = str_replace('_', '-', $this->test_field['field_name']);
+    $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
     $this->assertFieldById('edit-' . $field_str . '-und-0-select-other-list', $my_option, t('Select field value matches'));
 
     $this->drupalLogout();
+  }
+}
+
+/**
+ * @class
+ *
+ */
+class CCKSelectOtherAllowedValuesTest extends CCKSelectOtherTest {
+
+  static public function getInfo() {
+    return array(
+      'name' => t('CCK Select Other Allowed Values Test'),
+      'description' => t('Confirm that allowed values set on a field restrict the widget.'),
+      'group' => t('Field UI'),
+    );
   }
 
   /**
@@ -188,22 +218,17 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     $this->drupalLogin($this->admin_user);
 
     //Setup some allowed values to equal our select list options + another known value
-    $this->field['settings']['allowed_values'] = $this->instance['widget']['settings']['select_list_options'] . "\nAllowedValue";
-    field_update_field($this->field);
+    $this->test_field['settings']['allowed_values'] = $this->test_instance['widget']['settings']['select_list_options'] . "\nAllowedValue";
+    field_update_field($this->test_field);
 
-    $this->field = field_info_field($this->field['field_name']);
-    $this->assertEqual($this->field['id'], $this->instance['field_id'], t('Field name @first is equal to @second. Field updated successfully.', array('@first' => $this->field['id'], '@second' => $this->instance['field_id'])));
+    $this->test_field = field_info_field($this->test_field['field_name']);
+    $this->assertEqual($this->test_field['id'], $this->test_instance['field_id'], t('Field name @first is equal to @second. Field updated successfully.', array('@first' => $this->test_field['id'], '@second' => $this->test_instance['field_id'])));
 
     $this->drupalLogout();
     $this->drupalLogin($this->web_user);
 
-    $settings = array(
-      'type' => $this->contentType->type,
-    );
-    $this->node = $this->drupalCreateNode($settings);
-
-    $select_field = $this->field['field_name'] . '[und][0][select_other_list]';
-    $text_field = $this->field['field_name'] . '[und][0][select_other_text_input]';
+    $select_field = $this->test_field['field_name'] . '[und][0][select_other_list]';
+    $text_field = $this->test_field['field_name'] . '[und][0][select_other_text_input]';
     $goodEdit = array(
       $select_field => 'other',
       $text_field => 'AllowedValue',
@@ -215,11 +240,11 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     );
 
     // try to save a disallowed value
-    $this->drupalPost('node/' . $this->node->nid . '/edit', $badEdit, t('Save'));
+    $this->drupalPost('node/' . $this->test_node->nid . '/edit', $badEdit, t('Save'));
     $this->assertRaw(t('list_illegal_value'), t('Successfully blocked submission of DisallowedValue.'));
 
     // try to save an allowed value
-    $this->drupalPost('node/' . $this->node->nid . '/edit', $goodEdit, t('Save'));
+    $this->drupalPost('node/' . $this->test_node->nid . '/edit', $goodEdit, t('Save'));
     $this->assertNoRaw(t('list_illegal_value'), t('Successfully saved form with allowed value, AllowedValue.'));
 
     $this->drupalLogout();
