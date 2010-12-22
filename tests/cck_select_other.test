@@ -35,7 +35,7 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
    * Implementation of setUp() method
    */
   public function setUp() {
-    parent::setUp(array('cck_select_other'));
+    parent::setUp(array('cck_select_other', 'php'));
 //    parent::setUp('field', 'field_ui', 'list', 'options', 'cck_select_other'); //enable field api modules
 
     $this->assertTrue(module_exists('cck_select_other'), t('CCK Select Other module is enabled.'));
@@ -43,7 +43,7 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     $content_type = strtolower($this->randomName(5));
 
     /* Setup an admin user */
-    $this->admin_user = $this->drupalCreateUser( array('administer content types', 'administer site configuration'));
+    $this->admin_user = $this->drupalCreateUser( array('administer content types', 'administer site configuration', 'use PHP for settings'));
     $this->drupalLogin($this->admin_user);
 
     /* Create a new content type */
@@ -74,15 +74,17 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     $this->drupalPost($bundle_path . '/fields', $edit, 'Save');
     $edit = array(
       'instance[widget][settings][select_list_options]' => $this->options,
+      'instance[widget][settings][select_list_options_fieldset][advanced_options][select_list_options_php]' => '',
     );
     $this->drupalPost($bundle_path . '/fields/field_' . $field_name, $edit, 'Save settings');
+    $this->drupalGet($bundle_path . '/fields/field_' . $field_name);
 
     $this->test_field = field_info_field('field_' . $field_name);
     $this->test_instance = field_info_instance('node', 'field_' . $field_name, $this->contentType->type);
 
     /* Setup a web user that can create content */
     // @todo bypass node access seems to be the only thing that does not return 403
-    $this->web_user = $this->drupalCreateUser(array('access content', 'create ' . $this->contentType->type . ' content', 'delete any ' . $this->contentType->type . ' content', 'bypass node access'));
+    $this->web_user = $this->drupalCreateUser(array('access content', 'create ' . $this->contentType->type . ' content', 'delete any ' . $this->contentType->type . ' content', 'bypass node access', 'use PHP for settings'));
 
     $this->drupalLogout();
 
@@ -252,3 +254,55 @@ class CCKSelectOtherAllowedValuesTest extends CCKSelectOtherTest {
 
 }
 
+/**
+ * @class
+ * CCK Select Other PHP Options Test
+ */
+class CCKSelectOtherPHPOptionsTest extends CCKSelectOtherTest {
+  public static function getInfo() {
+    return array(
+      'name' => t('CCK Select Other PHP Options Test'),
+      'description' => t('Confirm that php options are generated in the select list.'),
+      'group' => t('Field UI'),
+    );
+  }
+
+  function testPHPOptions() {
+
+    // Login as admin user and change options to use php
+    $this->drupalLogin($this->admin_user);
+
+    $php_options = '$arr = array();
+    $blah = \'\';
+    for ($i = 0; $i < 3; $i++) {
+      $blah .= \'blah_\';
+      $arr[$blah] = $blah;
+    }
+    return $arr;';
+
+    $edit = array(
+      'instance[widget][settings][select_list_options]' => '',
+      'instance[widget][settings][select_list_options_fieldset][advanced_options][select_list_options_php]' => $php_options,
+    );
+    $bundle_path = 'admin/structure/types/manage/' . $this->contentType->type;
+
+    $this->drupalPost($bundle_path . '/fields/' . $this->test_field['field_name'], $edit, t('Save settings'));
+    $this->test_field = field_info_field($this->test_field['field_name']);
+    
+    $this->drupalLogout();
+
+    // Login as web user and make sure that we are selecting a value from
+    // the php generated list.
+    $this->drupalLogin($this->web_user);
+
+    $select_field = $this->test_field['field_name'] . '[und][0][select_other_list]';      
+    $edit = array(
+      $select_field => 'blah_blah_',
+    );
+
+    $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
+    $this->assertText('blah_blah_', t('Select value %value found on node.', array('%value' => 'blah_blah_')));
+
+    $this->drupalLogout();
+  }
+}

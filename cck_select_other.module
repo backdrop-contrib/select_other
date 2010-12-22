@@ -17,8 +17,11 @@ function cck_select_other_field_widget_info() {
       'field types' => array('list', 'list_number', 'list_text'),
       'settings' => array(
         'select_list_options' => '',
-        'advanced_options' => FALSE,
-        'select_list_options_php' => '',
+        'select_list_options_fieldset' => array(
+          'advanced_options' => array(
+            'select_list_options_php' => '',
+          ),
+        ),
       ),
       'behaviors' => array(
         'default value' => FIELD_BEHAVIOR_DEFAULT,
@@ -60,13 +63,13 @@ function cck_select_other_field_widget_settings_form($field, $instance) {
     '#type' => 'fieldset',
     '#title' => t('PHP code'),
     '#collapsible' => TRUE,
-    '#collapsed' => empty($settings['select_list_options_php']),
+    '#collapsed' => empty($settings['select_list_options_fieldset']['advanced_options']['select_list_options_php']),
   );
 
   $form['select_list_options_fieldset']['advanced_options']['select_list_options_php'] = array(
     '#type' => 'textarea',
     '#title' => t('Code'),
-    '#default_value' => !empty($settings['select_list_options_php']) ? $settings['select_list_options_php'] : '',
+    '#default_value' => !empty($settings['select_list_options_fieldset']['advanced_options']['select_list_options_php']) ? $settings['select_list_options_fieldset']['advanced_options']['select_list_options_php'] : '',
     '#rows' => 6,
     '#description' => t('Advanced usage only: PHP code that returns a keyed array of proposed select list options. Should not include &lt;?php ?&gt; delimiters. If this field is filled out, the array returned by this code will override the proposed select list options above.'),
   );
@@ -78,12 +81,6 @@ function cck_select_other_field_widget_settings_form($field, $instance) {
 
   return $form;
 }
-
-/**
- * CCK Select Other Widget Settings Form submit callback
- * @param $form
- * @param &$form_state
- */
 
 /**
  * Implementation of hook_field_widget_form().
@@ -142,7 +139,8 @@ function cck_select_other_options($field) {
     return array();
   }
 
-  $options = eval($field['widget']['settings']['select_list_options_php']);
+  $options = eval($field['widget']['settings']['select_list_options_fieldset']['advanced_options']['select_list_options_php']);
+
   if (empty($options)) {
     $options_str = $field['widget']['settings']['select_list_options'];
     if (!empty($options_str)) {
