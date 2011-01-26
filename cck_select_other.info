@@ -1,6 +1,6 @@
 name = "Select Other"
 description = "Adds a new select widget for CCK text (and related field types) that allows users to input either with a select list or a text input box."
-package = CCK
+package = "Fields"
 dependencies[] = list
 files[] = cck_select_other.module
 files[] = cck_select_other.js
