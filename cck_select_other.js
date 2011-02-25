@@ -1,4 +1,3 @@
-//$Id$
 
 /**
  *  cck_select_other javascript file 

@@ -12,4 +12,3 @@ files[] = views/cck_select_other_handler_filter.inc
 core = 7.x
 php = 5.x
 
-//$Id$
