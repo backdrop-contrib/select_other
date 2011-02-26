@@ -219,7 +219,9 @@ class CCKSelectOtherAllowedValuesTest extends CCKSelectOtherTest {
     $this->drupalLogin($this->admin_user);
 
     //Setup some allowed values to equal our select list options + another known value
-    $this->test_field['settings']['allowed_values'] = $this->test_instance['widget']['settings']['select_list_options'] . "\nAllowedValue";
+    $options = cck_select_other_options($this->test_instance);
+    $options['AllowedValue'] = 'AllowedValue';
+    $this->test_field['settings']['allowed_values'] = $options;
     field_update_field($this->test_field);
 
     $this->test_field = field_info_field($this->test_field['field_name']);
@@ -247,6 +249,7 @@ class CCKSelectOtherAllowedValuesTest extends CCKSelectOtherTest {
     // try to save an allowed value
     $this->drupalPost('node/' . $this->test_node->nid . '/edit', $goodEdit, t('Save'));
     $this->assertNoRaw(t('list_illegal_value'), t('Successfully saved form with allowed value, AllowedValue.'));
+    $this->assertRaw('AllowedValue', t('Found %allowed allowed value on node view.', array('%allowed' => 'AllowedValue')));
 
     $this->drupalLogout();
   }
