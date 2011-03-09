@@ -128,6 +128,16 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
 }
 
 /**
+ * Implementation of hook_form_alter().
+ */
+function cck_select_other_form_alter(&$form, &$form_state, $form_id) {
+  // @todo fix Drupal core field bug so that field validation functions are alterable.
+  if ( $form_id == 'field_ui_field_edit_form' && isset($form['field']['settings']['allowed_values']) && isset($form['widget']['settings']['allowed_values']) ) {
+    $form['field']['settings']['allowed_values']['#element_validate'] = NULL;
+  }
+}
+
+/**
  * Retrieve options for the select list
  * @param $field the field instance we're working with
  * @return an array of options to pass into the Form API.
