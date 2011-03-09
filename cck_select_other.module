@@ -245,13 +245,10 @@ function cck_select_other_pre_render($element, $form_state = NULL) {
   $delta = $element['#parents'][2];
 
   if (!$js) {
-    drupal_add_js(array('CCKSelectOther' => array('field' => $field_name, 'lang' => $langcode, 'delta' => $delta)), array('type' => 'setting'));
     drupal_add_js(drupal_get_path('module', 'cck_select_other') . '/cck_select_other.js');
     $js = TRUE;
   }
-  else {
-    drupal_add_js(array('CCKSelectOther' => array('field' => $field_name, 'lang' => $langcode, 'delta' => $delta)), array('type' => 'setting'));
-  }
+  drupal_add_js(array('CCKSelectOther' => array(array('field' => $field_name, 'lang' => $langcode, 'delta' => $delta))), array('type' => 'setting'));
 }
 
 /**
@@ -272,13 +269,10 @@ function cck_select_other_post_render($content, $element) {
   $delta = $element['#parents'][2];
 
   if (!$js) {
-    drupal_add_js(array('CCKSelectOther' => array('field' => $field_name, 'lang' => $langcode, 'delta' => $delta)), array('type' => 'setting'));
     drupal_add_js(drupal_get_path('module', 'cck_select_other') . '/cck_select_other.js');
     $js = TRUE;
   }
-  else {
-    drupal_add_js(array('CCKSelectOther' => array('field' => $field_name, 'lang' => $langcode, 'delta' => $delta)), array('type' => 'setting'));
-  }
+  drupal_add_js(array('CCKSelectOther' => array(array('field' => $field_name, 'lang' => $langcode, 'delta' => $delta))), array('type' => 'setting'));
 
   return $content;
 }

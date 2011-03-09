@@ -308,3 +308,78 @@ class CCKSelectOtherPHPOptionsTest extends CCKSelectOtherTest {
     $this->drupalLogout();
   }
 }
+
+/**
+ * @class
+ * CCK Select Other Multiple Fields Test
+ */
+class CCKSelectOtherMultipleFieldsTest extends CCKSelectOtherTest {
+  public static function getInfo() {
+    return array(
+      'name' => t('CCK Select Other Multiple'),
+      'description' => t('Tests UI when a content type has multiple select other fields.'),
+      'group' => t('Field UI'),
+    );
+  }
+
+  function testMultipleField() {
+    /* Create some options for our select other list */
+    $this->newoptions = '';
+    for ($i = 0; $i < 4; $i++) {
+      $option = $this->randomName(5);
+      $newoptions[$option] = $option;
+      $this->newoptions .= $option;
+      if ($i < 3) {
+        $this->newoptions .= "\n";
+      }
+    }
+
+    do {
+      $firstoption = array_rand(cck_select_other_options($this->test_instance));
+    } while ($firstoption == 'other');
+
+    // Create a new field and instance
+    $this->second_field = $this->test_field;
+    $this->second_field['field_name'] = 'field_' . strtolower($this->randomName(5));
+    $this->second_field['label'] = $this->randomName(5);
+    unset($this->second_field['id']);
+    $this->second_field = field_create_field($this->second_field);
+
+    $this->second_instance = $this->test_instance;
+    $this->second_instance['field_id'] = $this->second_field['id'];
+    $this->second_instance['field_name'] = $this->second_field['field_name'];
+    $this->second_instance['label'] = $this->second_field['label'];
+    $this->second_instance['widget']['settings']['select_list_options'] = $this->newoptions;
+    unset($this->second_instance['id']);
+
+    $this->second_instance = field_create_instance($this->second_instance);
+
+    // Login
+    $this->drupalLogin($this->web_user);
+
+    // Load up our test node in edit view now that we have a new field.
+    $this->drupalGet('node/' . $this->test_node->nid . '/edit');
+    $this->assertRaw($this->second_field['label'], t('Found label, %label, for second test field, %field.', array('%label' => $this->second_field['label'], '%field' => $this->second_field['field_name'])));
+
+    // Post some new values
+    $secondoption = $this->randomName(15);
+    $edit = array(
+      $this->test_instance['field_name'] . '[und][0][select_other_list]' => $firstoption,
+      $this->second_instance['field_name'] . '[und][0][select_other_list]' => 'other',
+      $this->second_instance['field_name'] . '[und][0][select_other_text_input]' => $secondoption,
+    );
+
+    $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
+    $this->assertRaw($firstoption, t('Found option, %option, for field, %field.', array('%option' => $firstoption, '%field' => $this->test_field['field_name']))); 
+    $this->assertRaw($secondoption, t('Found option, %option, for field, %field.', array('%option' => $secondoption, '%field' => $this->second_field['field_name']))); 
+
+    // Check our edit page again.
+    $this->drupalGet('node/' . $this->test_node->nid . '/edit');
+    // @todo there is currently no way in Drupal SimpleTest to test style: hidden.
+    // However, if you use the Debug mode, you can confirm the test yourself.
+
+    // Logout
+    $this->drupalLogout();
+  }
+}
+

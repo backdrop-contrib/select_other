@@ -1,40 +1,35 @@
-
+//$Id$
 /**
- *  cck_select_other javascript file 
+ * @file
+ * cck_select_other javascript file 
  */
 
 (function ($) {
   Drupal.behaviors.cckSelectOther = {
     attach: function (context, settings) {
 
-      //document.write(Drupal.settings.CCKSelectOther.field.length);
-      var field_str = new String(settings.CCKSelectOther.field);
-      var lang = new String(settings.CCKSelectOther.lang);
-      var delta = new String(settings.CCKSelectOther.delta);
-      var field = field_str.replace(/_/g, '-');
+      // Prevent errors
+      if (typeof settings.CCKSelectOther != 'object') return;
 
-      var selectId = '#edit-field-' + field + '-' + lang + '-' + delta + '-select-other-list';
-      var inputId = '#edit-field-' + field + '-' + lang + '-' + delta + '-select-other-text-input';
-      var value = $(selectId + ' option:selected').val();
+      $.each(settings.CCKSelectOther, function(n,MyCCKSelectOther){
 
-      $(document).ready( function() {
-        value = $(selectId + ' option:selected').val();
-        $(inputId).css('display', (value == "other") ? 'block' : 'none');
+        // Prevent errors
+        if (typeof MyCCKSelectOther.field == 'undefined') return;
 
+        var field_str = new String(MyCCKSelectOther.field);
+        field_str = field_str.replace(/_/g, '-');
+        var lang = new String(MyCCKSelectOther.lang);
+        var delta = new String(MyCCKSelectOther.delta);
+        var field_id = '#edit-field-' + field_str + '-' + lang + '-' + delta + '-select-other';
+        var ActionBind = (($.browser.msie == true) ? 'click' : 'change');
+
+        $(document).ready( function() {
+          $(field_id+'-list').bind(ActionBind,function() {
+            // Add parent() to hide input wrapper
+            $(field_id+'-text-input').parent().css('display', ($(this).val() == "other") ? 'block' : 'none');
+          }).trigger(ActionBind);
+        });
       });
-
-      if ($.browser.msie == true) {
-        $(selectId).click( function() {
-          value = $(selectId + ' option:selected').val();
-          $(inputId).css('display', (value == "other") ? 'block' : 'none');
-        });
-      }
-      else {
-        $(selectId).change( function() {
-          value = $(selectId + ' option:selected').val();
-          $(inputId).css('display', (value == "other") ? 'block' : 'none');
-        });
-      }
     }
   }
 })(jQuery);
