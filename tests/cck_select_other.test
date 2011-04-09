@@ -8,7 +8,8 @@
 
 /**
  * SimpleTest class for cck_select_other
- *
+ * This is a base class that other tests will rely on
+ * for standardized setUp and tearDown methods.
  */
 class CCKSelectOtherTest extends DrupalWebTestCase {
 
@@ -17,18 +18,6 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
   public $test_instance = NULL;
   public $test_field = NULL;
   public $options = NULL;
-
-  /**
-   * Implementation of getInfo() method
-   * @return array 
-   */
-  public static function getInfo() {
-    return array(
-      'name' => t('CCK Select Other'),
-      'description' => t('Confirms that there are 5 options available. Used as a base class.'),
-      'group' => t('Field UI'),
-    );
-  }
 
   /**
    * Implementation of setUp() method
@@ -95,6 +84,9 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     $this->test_node = $this->drupalCreateNode($settings);
 
     $this->drupalLogout();
+
+    $options_arr = cck_select_other_options($this->test_instance);
+    $this->assertEqual(5, count($options_arr), t('There are 5 = %count options set on the field.', array('%count' => count($options_arr))));
   }
 
   /**
@@ -117,14 +109,6 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     $this->options = NULL;
 
     parent::tearDown();
-  }
-
-  /**
-   * Basic test
-   */
-  function testSelectOtherOptions() {
-    $options_arr = cck_select_other_options($this->test_instance);
-    $this->assertEqual(5, count($options_arr), t('There are 5 = %count options set on the field.', array('%count' => count($options_arr))));
   }
 }
 
