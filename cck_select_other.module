@@ -91,16 +91,18 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
     $items[] = array('value' => '');
   }
 
-  if (!isset($options[$items[$delta]['value']])) {
-    $def = 'other';
+  if (!isset($items[$delta])) {
+    $items[$delta] = array('value' => '');
   }
-  else {
-    $def = $items[$delta]['value'];
-  }
+
+  // Set default value of field instance or use other if null.
+  $def = isset($instance['default_value']) ? $instance['default_value'] : 'other';
 
   $element = array(
     '#type' => $instance['widget']['type'],
     '#default_value' => '',
+    '#prefix' => '<div id="field-' . substr($field['field_name'], 6) . '-' . $langcode . '-' . $delta . '-wrapper">',
+    '#suffix' => '</div>',
   );
 
   $element['select_other_list'] = array(
