@@ -95,8 +95,20 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
     $items[$delta] = array('value' => '');
   }
 
-  // Set default value of field instance or use other if null.
-  $def = isset($instance['default_value']) ? $instance['default_value'] : 'other';
+  // Set default value if we have instance data for delta, a default
+  // value setting, or something basic if none at all.
+  if (!empty($items[$delta]['value'])) {
+    $def = (in_array($items[$delta]['value'], array_keys($options))) ? $items[$delta]['value'] : 'other';
+    $otherdef = ($def == 'other') ? $items[$delta]['value'] : '';
+  }
+  else if (isset($instance['default_value'])) {
+    $def = isset($instance['default_value'][0]['select_other_list']) ? $instance['default_value'][0]['select_other_list'] : 'other';
+    $otherdef = ($def == 'other') ? $instance['default_value'][0]['value'] : '';
+  }
+  else {
+    $def = 'other';
+    $otherdef = '';
+  }
 
   $element = array(
     '#type' => $instance['widget']['type'],
@@ -119,7 +131,7 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
   // @fixme - #states is REALLY slow here so I'm using my own shit again.
   $element['select_other_text_input'] = array(
     '#type' => 'textfield',
-    '#default_value' => ($def == 'other') ? check_plain($items[$delta]['value']) : '',
+    '#default_value' => check_plain($otherdef),
     '#attributes' => array(
       'class' => array('form-text select_other_text_input'),
     ),

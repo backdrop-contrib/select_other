@@ -63,6 +63,7 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     $edit = array(
       'instance[widget][settings][select_list_options]' => $this->options,
       'instance[widget][settings][select_list_options_fieldset][advanced_options][select_list_options_php]' => '',
+      'field_' . $field_name . '[und][0][select_other_list]' => 'other',
     );
     $this->drupalPost($bundle_path . '/fields/field_' . $field_name, $edit, 'Save settings');
     $this->drupalGet($bundle_path . '/fields/field_' . $field_name);
@@ -408,18 +409,25 @@ class CCKSelectOtherMultipleValueListTest extends CCKSelectOtherTest {
   function setUp() {
     parent::setUp();
 
-    // Change our field settings for cardinality to 2
-    $this->test_field['cardinality'] = 2;
-    field_update_field($this->test_field);
-    $this->test_field = field_info_field($this->test_field['field_name']);
+    $this->drupalLogin($this->admin_user);
 
-    // Set a default value to the first option in the list.
+    // Make changes to our field instance.
     $options_arr = array_keys(cck_select_other_options($this->test_instance));
-    $this->test_instance['default_value'] = $options_arr[0];
-    field_update_instance($this->test_instance);
+    $edit = array(
+      'field[cardinality]' => 2,
+      $this->test_field['field_name'] . '[und][0][select_other_list]' => $options_arr[0],
+    );
+    $this->drupalPost('admin/structure/types/manage/' . $this->test_node->type . '/fields/' . $this->test_field['field_name'], $edit, 'Save settings');
+    field_cache_clear(); // Ugh...
 
+    // Load our field and instance back again.
+    $this->test_field = field_info_field($this->test_field['field_name']);
+    $this->test_instance = field_info_instance('node', $this->test_field['field_name'], $this->test_node->type);
+
+    $this->drupalLogout();
   }
 
+  // @todo $delta for default values.
   function testFieldEditSave() {
     $this->drupalLogin($this->web_user);
 
@@ -428,8 +436,8 @@ class CCKSelectOtherMultipleValueListTest extends CCKSelectOtherTest {
     $name = substr($this->test_field['field_name'], 6);
 
     $this->drupalGet('node/' . $this->test_node->nid . '/edit');
-    $this->assertOptionSelected('edit-field-' . $name . '-und-0-select-other-list', $this->test_instance['default_value']);
-    $this->assertOptionSelected('edit-field-' . $name . '-und-1-select-other-list', $this->test_instance['default_value']);
+    $this->assertOptionSelected('edit-field-' . $name . '-und-0-select-other-list', $this->test_instance['default_value'][0]['value'], t('%b', array('%b' => json_encode($this->test_instance['default_value']))));
+    $this->assertOptionSelected('edit-field-' . $name . '-und-1-select-other-list', $this->test_instance['default_value'][0]['value']);
 
     // Try to post and make sure it saved both values correctly.
     // In unlimited situation, there are two elements by default.
