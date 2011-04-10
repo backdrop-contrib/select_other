@@ -325,7 +325,7 @@ class CCKSelectOtherPHPOptionsTest extends CCKSelectOtherTest {
 class CCKSelectOtherMultipleFieldsTest extends CCKSelectOtherTest {
   public static function getInfo() {
     return array(
-      'name' => t('CCK Select Other Multiple'),
+      'name' => t('CCK Select Other Multiple Fields'),
       'description' => t('Tests UI when a content type has multiple select other fields.'),
       'group' => t('Field UI'),
     );
@@ -392,3 +392,69 @@ class CCKSelectOtherMultipleFieldsTest extends CCKSelectOtherTest {
   }
 }
 
+/**
+ * @class CCK Select Other Multiple Value List Field Case
+ * Tests multiple value list fields where $delta > 1 or -1 (unlimited).
+ */
+class CCKSelectOtherMultipleValueListTest extends CCKSelectOtherTest {
+  static public function getInfo() {
+    return array(
+      'name' => t('CCK Select Other Multiple Values'),
+      'description' => t('Tests multiple value list field. Where delta is greater than one.'),
+      'group' => t('Field UI'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp();
+
+    // Change our field settings for cardinality to 2
+    $this->test_field['cardinality'] = 2;
+    field_update_field($this->test_field);
+    $this->test_field = field_info_field($this->test_field['field_name']);
+
+    // Set a default value to the first option in the list.
+    $options_arr = array_keys(cck_select_other_options($this->test_instance));
+    $this->test_instance['default_value'] = $options_arr[0];
+    field_update_instance($this->test_instance);
+
+  }
+
+  function testFieldEditSave() {
+    $this->drupalLogin($this->web_user);
+
+    // Load node edit form and check element default values.
+    // edit-field-wqs9w-und-0-select-other-list
+    $name = substr($this->test_field['field_name'], 6);
+
+    $this->drupalGet('node/' . $this->test_node->nid . '/edit');
+    $this->assertOptionSelected('edit-field-' . $name . '-und-0-select-other-list', $this->test_instance['default_value']);
+    $this->assertOptionSelected('edit-field-' . $name . '-und-1-select-other-list', $this->test_instance['default_value']);
+
+    // Try to post and make sure it saved both values correctly.
+    // In unlimited situation, there are two elements by default.
+    // We'll try add more later.
+    $options_arr = cck_select_other_options($this->test_instance);
+    $firstoption = array_rand(cck_select_other_options($this->test_instance));
+    $otheroption = $this->randomName(16);
+    $randomoption = $this->randomName(16);
+
+    $edit = array(
+      $this->test_instance['field_name'] . '[und][0][select_other_list]' => 'other',
+      $this->test_instance['field_name'] . '[und][0][select_other_text_input]' => $otheroption,
+
+      $this->test_instance['field_name'] . '[und][1][select_other_list]' => $firstoption,
+    );
+
+    if ($firstoption == 'other') {
+      $edit[$this->test_instance['field_name'] . '[und][1][select_other_text_input]'] = $randomoption;
+    }
+
+    $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
+    $this->assertRaw($otheroption, t('Found first select other list option on node.'));
+    $this->assertRaw(($firstoption == 'other') ? $randomoption : $firstoption, t('Found second select other list option on node.'));
+
+    $this->drupalLogout();
+  }
+
+}
