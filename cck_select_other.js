@@ -14,20 +14,19 @@
       $.each(settings.CCKSelectOther, function(n,MyCCKSelectOther){
 
         // Prevent errors
-        if (typeof MyCCKSelectOther.field == 'undefined') return;
+        if (typeof MyCCKSelectOther.field_id == 'undefined') return;
 
-        var field_str = new String(MyCCKSelectOther.field);
-        field_str = field_str.replace(/_/g, '-');
-        var lang = new String(MyCCKSelectOther.lang);
-        var delta = new String(MyCCKSelectOther.delta);
-        var field_wrapper = '#field-' + field_str + '-' + lang + '-' + delta + '-wrapper';
+        var field_id = new String(MyCCKSelectOther.field_id);
+        var select_id = new String(field_id + '-select-other-list');
+        var text_id = new String(field_id + '-select-other-text-input');
+
         var ActionBind = (($.browser.msie == true) ? 'click' : 'change');
 
         $(document).ready( function() {
           // We need to go up further up the element chain to work around 'add another item'
-          $(field_wrapper).find('select').bind(ActionBind,function() {
+          $('select#edit-' + select_id).bind(ActionBind,function() {
             // Add parent() to hide input wrapper
-            $(this).parents(field_wrapper).find('input').parent().css('display', ($(this).val() == "other") ? 'block' : 'none');
+            $('input#edit-' + text_id).parent().css('display', ($(this).val() == "other") ? 'block' : 'none');
           }).trigger(ActionBind);
         });
       });

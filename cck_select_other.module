@@ -216,30 +216,53 @@ function cck_select_other_options($field) {
  * CCK Select Other widget process callback
  * @param $element
  * @param &$form_state
- * @param $complete_form this is undefined in theme.inc????? core bug?
+ * @return $element;
  */
 function cck_select_other_process($element, &$form_state) {
-  if (isset($element['#parents'])) {
-    $field_name = $element['#parents'][0];
-    $langcode = $element['#parents'][1];
-    $delta = $element['#parents'][2];
-    $field_values = $form_state['values'][$field_name][$langcode][$delta];
+  if (!isset($element['#name'])) {
+    return $element;
   }
+  
+  // No matches = not our field.
+  $n = preg_match_all("/[A-Za-z0-9\-\_]+/", $element['#name'], $matches);
+  if ($n == 0) {
+    return $element;
+  }
+
+  // By any chance if we don't have any array keys, get out of here.
+  $keys = isset($matches[0]) ? $matches[0]: NULL;
+  if (!isset($keys)) {
+    return $element;
+  }
+
+  // field_values need to be a reference!
+  $field_values = &$form_state['values'];
+  foreach ($keys as $key) {
+    $field_values = &$field_values[$key];
+  }
+
+  // We have to reverse the array keys because of element containers (profile2).
+  $reversed = array_reverse($keys);
+
+  $delta = $reversed[0];
+  $langcode = $reversed[1];
+  $field_name = $reversed[2];
 
   if (isset($field_values) && !empty($field_values)) {
     if ($field_values['select_other_list'] == 'other') {
       $element['#value'] = $field_values['select_other_text_input'];
-      $form_state['values'][$field_name][$langcode][$delta] = array(
+      $field_values = array(
         'value' => $field_values['select_other_text_input'],
       );
       // Validate empty? This seems to be done in list.module in Drupal 7 now.
     }
     else {
       $element['#value'] = $field_values['select_other_list'];
-      $form_state['values'][$field_name][$langcode][$delta] = array(
+      $field_values = array(
         'value' => $field_values['select_other_list'],
       );
     }
+
     return $element;
   }
   else {
@@ -270,15 +293,28 @@ function cck_select_other_pre_render($element, $form_state = NULL) {
     return $element; 
   }
 
-  $field_name = substr($element['#parents'][0], 6);
-  $langcode = $element['#parents'][1];
-  $delta = $element['#parents'][2];
+  // No matches = not our field.
+  $n = preg_match_all("/[A-Za-z0-9\-\_]+/", $element['#name'], $matches);
+  if ($n == 0) {
+    return $element;
+  }
+
+  // By any chance if we don't have any array keys, get out of here.
+  $keys = isset($matches[0]) ? $matches[0]: NULL;
+  if (!isset($keys)) {
+   return $element;
+  }
+
+  foreach ($keys as $key => $val) {
+    $keys[$key] = preg_replace("/_/", '-', $val);
+  }
+  $field_id = implode('-', $keys);
 
   if (!$js) {
     drupal_add_js(drupal_get_path('module', 'cck_select_other') . '/cck_select_other.js');
     $js = TRUE;
   }
-  drupal_add_js(array('CCKSelectOther' => array(array('field' => $field_name, 'lang' => $langcode, 'delta' => $delta))), array('type' => 'setting'));
+  drupal_add_js(array('CCKSelectOther' => array(array('field_id' => $field_id))), array('type' => 'setting'));
 }
 
 /**
@@ -294,15 +330,28 @@ function cck_select_other_post_render($content, $element) {
     return $content;
   }
 
-  $field_name = substr($element['#parents'][0], 6);
-  $langcode = $element['#parents'][1];
-  $delta = $element['#parents'][2];
+  // No matches = not our field.
+  $n = preg_match_all("/[A-Za-z0-9\-\_]+/", $element['#name'], $matches);
+  if ($n == 0) {
+    return $element;
+  }
+
+  // By any chance if we don't have any array keys, get out of here.
+  $keys = isset($matches[0]) ? $matches[0]: NULL;
+  if (!isset($keys)) {
+   return $element;
+  }
+
+  foreach ($keys as $key => $val) {
+    $keys[$key] = preg_replace("/_/", '-', $val);
+  }
+  $field_id = implode('-', $keys);
 
   if (!$js) {
     drupal_add_js(drupal_get_path('module', 'cck_select_other') . '/cck_select_other.js');
     $js = TRUE;
   }
-  drupal_add_js(array('CCKSelectOther' => array(array('field' => $field_name, 'lang' => $langcode, 'delta' => $delta))), array('type' => 'setting'));
+  drupal_add_js(array('CCKSelectOther' => array(array('field_id' => $field_id))), array('type' => 'setting'));
 
   return $content;
 }
