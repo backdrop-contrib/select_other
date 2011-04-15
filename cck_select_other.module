@@ -115,6 +115,9 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
     '#default_value' => '',
     '#prefix' => '<div id="field-' . substr($field['field_name'], 6) . '-' . $langcode . '-' . $delta . '-wrapper">',
     '#suffix' => '</div>',
+    '#field_name' => $field['field_name'], // Required fields for field_conditional_state.
+    '#field_parents' => $form['#parents'],
+    '#bundle' => $instance['bundle'],
   );
 
   $element['select_other_list'] = array(
