@@ -187,19 +187,29 @@ class CCKSelectOtherBasicTest extends CCKSelectOtherTest {
    * Fail validation of node edit form for required field.
    */
   function testFailValidationRequiredField() {
+    $select_field = $this->test_field['field_name'] . '[und][0][select_other_list]';
+    $text_field = $this->test_field['field_name'] . '[und][0][select_other_text_input]';
+
+    $edit = array(
+      $select_field => 'other',
+      $text_field => '',
+    );
+
+    // First assert that we do not fail validation for a non-
+    // required field.
+    $this->drupalLogin($this->web_user);
+
+    $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
+    $this->assertNoRaw(t('A non-empty value is required for this option.'), t('Did not fail validation for non-required field.'));
+
+    $this->drupalLogout();
+
     // Make field instance required and update
     $this->test_instance['required'] = 1;
     field_update_instance($this->test_instance);
 
     // Fairly straightforward, see above tests.
     $this->drupalLogin($this->web_user);
-
-    $select_field = $this->test_field['field_name'] . '[und][0][select_other_list]';
-    $text_field = $this->test_field['field_name'] . '[und][0][select_other_text_input]';
-    $edit = array(
-      $select_field => 'other',
-      $text_field => '',
-    );
 
     $field_str = str_replace('_', '-', $this->test_field['field_name']);
     $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
