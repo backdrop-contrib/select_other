@@ -24,7 +24,6 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
    */
   public function setUp() {
     parent::setUp(array('cck_select_other', 'php'));
-//    parent::setUp('field', 'field_ui', 'list', 'options', 'cck_select_other'); //enable field api modules
 
     $this->assertTrue(module_exists('cck_select_other'), t('CCK Select Other module is enabled.'));
 
@@ -61,6 +60,7 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     );
     $this->drupalPost($bundle_path . '/fields', $edit, 'Save');
     $edit = array(
+      'instance[required]' => TRUE, 
       'instance[widget][settings][select_list_options]' => $this->options,
       'instance[widget][settings][select_list_options_fieldset][advanced_options][select_list_options_php]' => '',
       'field_' . $field_name . '[und][0][select_other_list]' => 'other',
@@ -87,7 +87,8 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     $this->drupalLogout();
 
     $options_arr = cck_select_other_options($this->test_instance);
-    $this->assertEqual(5, count($options_arr), t('There are 5 = %count options set on the field.', array('%count' => count($options_arr))));
+    $options_arr_count = $this->test_instance['required'] ? 5 : 6;
+    $this->assertEqual($options_arr_count, count($options_arr), t('There are 5 = %count options set on the field.', array('%count' => count($options_arr))));
   }
 
   /**
@@ -465,4 +466,54 @@ class CCKSelectOtherMultipleValueListTest extends CCKSelectOtherTest {
     $this->drupalLogout();
   }
 
+}
+
+/**
+ * @class CCKSelectOtherNotRequiredTest
+ */
+class CCKSelectOtherNotRequiredTest extends CCKSelectOtherTest {
+  
+  public static function getInfo() {
+    return array(
+      'name' => t('CCK Select Other Not Required'),
+      'description' => t('Asserts that CCK Select Other is not saving any values if -none- is selected.'),
+      'group' => t('Field UI'),
+    );
+  }
+  
+  function setUp() {
+    parent::setUp();
+    
+    $this->test_instance['required'] = FALSE;
+    field_update_instance($this->test_instance);
+    $this->test_instance = field_info_instance('node', $this->test_field['field_name'], $this->test_node->type);
+  }
+
+  /**
+   * Test that there is a -none- option in a non-required field and that it does
+   * not save a field value.
+   */
+  function testNoRequired() {
+    $this->drupalLogin($this->web_user);
+
+    $name = substr($this->test_field['field_name'], 6);
+    
+    // Assert that we have -none- as the option in our select list.
+    $this->drupalGet('node/' . $this->test_node->nid . '/edit');
+    $this->assertOptionSelected('edit-field-' . $name . '-und-0-select-other-list', '-none-', t('-None- option selected in select list.'));
+
+    // Post to the node, and make sure that -none- is the value and that value ends up as empty.
+    $edit = array(
+      $this->test_instance['field_name'] . '[und][0][select_other_list]' => '-none-',            
+    );
+    $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
+    $this->assertNoRaw($this->test_instance['label']);
+    
+    // Assert the node object as well.
+    $node = node_load($this->test_node->nid);    
+    $this->assertNull($node->{$this->test_instance['field_name']}['und'], t('Select other did not save any value for non-required field.'));
+    
+    $this->drupalLogout();
+  }
+  
 }

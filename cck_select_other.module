@@ -85,7 +85,7 @@ function cck_select_other_field_widget_settings_form($field, $instance) {
  */
 function cck_select_other_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   $options = cck_select_other_options($instance);
-  $def = '';
+  $def = $instance['required'] ? '' : '-none-';
 
   if (empty($items)) {
     $items[] = array('value' => '');
@@ -106,7 +106,7 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
     $otherdef = ($def == 'other') ? $instance['default_value'][0]['value'] : '';
   }
   else {
-    $def = 'other';
+    $def = $instance['required'] ? array_shift(array_values($options)) : '-none-';
     $otherdef = '';
   }
 
@@ -208,8 +208,13 @@ function cck_select_other_options($field) {
       $options[$key] = t('@option', array('@option' => $option));
     }
   }
+  
   if (!isset($options['other'])) {
     $options['other'] = t('Other');
+  }
+  
+  if (!$field['required']) {
+    $options = array_merge(array('-none-' => t('-None-')), $options);
   }
 
   return $options;
@@ -252,14 +257,22 @@ function cck_select_other_process($element, &$form_state) {
   $field_name = $reversed[2];
 
   if (isset($field_values) && !empty($field_values)) {
-    if ($field_values['select_other_list'] == 'other') {
+    if ($field_values['select_other_list'] == '-none-') {
+      // If we are not a required field, then we do not set a value.
+      $element['#value'] = '';
+      $field_values = array(
+        'value' => '',                    
+      );
+    }
+    else if ($field_values['select_other_list'] == 'other') {
+      // Use text input if we have 'other' selected
       $element['#value'] = $field_values['select_other_text_input'];
       $field_values = array(
         'value' => $field_values['select_other_text_input'],
       );
-      // Validate empty? This seems to be done in list.module in Drupal 7 now.
     }
     else {
+      // Use the select list otherwise
       $element['#value'] = $field_values['select_other_list'];
       $field_values = array(
         'value' => $field_values['select_other_list'],
