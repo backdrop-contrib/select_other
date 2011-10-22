@@ -511,8 +511,35 @@ class CCKSelectOtherNotRequiredTest extends CCKSelectOtherTest {
     
     // Assert the node object as well.
     $node = node_load($this->test_node->nid);    
-    $this->assertNull($node->{$this->test_instance['field_name']}['und'], t('Select other did not save any value for non-required field.'));
+    $this->assertTrue(empty($node->{$this->test_instance['field_name']}), t('Select other did not save any value for non-required field.'));
     
+    $this->drupalLogout();
+  }
+
+  /**
+   * Save a value to the field and then set it to -none-
+   */
+  function testValueToNone() {
+    $this->drupalLogin($this->web_user);
+
+    // Save a value into the node and assert that it was saved.
+    $edit = array(
+      $this->test_instance['field_name'] . '[und][0][select_other_list]' => 'other', 
+      $this->test_instance['field_name'] . '[und][0][select_other_text_input]' => $this->randomName(15),
+    );
+    $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
+    $this->assertRaw($this->test_instance['label']);
+
+    $edit = array(
+      $this->test_instance['field_name'] . '[und][0][select_other_list]' => '-none-',
+    );
+    $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
+    $this->assertNoRaw($this->test_instance['label']);
+
+    // Assert the node object as well.
+    $node = node_load($this->test_node->nid);
+    $this->assertTrue(empty($node->{$this->test_instance['field_name']}), t('Select other did not save any value for non-required field.'));
+
     $this->drupalLogout();
   }
   
