@@ -149,10 +149,12 @@ class CCKSelectOtherBasicTest extends CCKSelectOtherTest {
       $edit[$text_field] = $this->randomName(16);
     }
 
+    $my_option_value = ($my_option == 'other') ? $edit[$text_field] : $edit[$select_field];
+
     $this->drupalGet('node/' . $this->test_node->nid);
     $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
     $this->test_node = node_load($this->test_node->nid, NULL, TRUE);
-    $this->assertRaw($this->test_node->{$this->test_field['field_name']}['und'][0]['value'], $my_option, t('Select other field data %field matches %match', array('%field' => $this->test_node->{$this->test_field['field_name']}['und'][0]['value'], '%match' => $my_option)));
+    $this->assertRaw($this->test_node->{$this->test_field['field_name']}['und'][0]['value'], t('Select other field data %field matches %match on node.', array('%field' => $this->test_node->{$this->test_field['field_name']}['und'][0]['value'], '%match' => $my_option_value)));
 
     $this->drupalLogout();
   }
@@ -187,6 +189,10 @@ class CCKSelectOtherBasicTest extends CCKSelectOtherTest {
    * Fail validation of node edit form for required field.
    */
   function testFailValidationRequiredField() {
+    // Make field instance required and update
+    $this->test_instance['required'] = FALSE;
+    field_update_instance($this->test_instance);
+
     $select_field = $this->test_field['field_name'] . '[und][0][select_other_list]';
     $text_field = $this->test_field['field_name'] . '[und][0][select_other_text_input]';
 
@@ -205,7 +211,7 @@ class CCKSelectOtherBasicTest extends CCKSelectOtherTest {
     $this->drupalLogout();
 
     // Make field instance required and update
-    $this->test_instance['required'] = 1;
+    $this->test_instance['required'] = TRUE;
     field_update_instance($this->test_instance);
 
     // Fairly straightforward, see above tests.

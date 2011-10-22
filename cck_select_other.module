@@ -138,11 +138,8 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
     '#attributes' => array(
       'class' => array('form-text select_other_text_input'),
     ),
+    '#element_validate' => array('cck_select_other_widget_validate'), // Always send through this validate function!
   );
-
-  if ($instance['required']) {
-    $element['select_other_text_input']['#element_validate'] = array('cck_select_other_widget_validate');
-  }
 
   return $element;
 }
@@ -165,13 +162,16 @@ function cck_select_other_widget_validate($element, &$form_state) {
   $langcode = $element['#parents'][1];
   $delta = $element['#parents'][2];
 
+  // Retrieve field info from $form_state. 
+  $field = $form_state['field'][$field_name];
+
   // Empty other field.
-  if ($form_state['values'][$field_name][$langcode][$delta]['select_other_list'] == 'other' && empty($form_state['values'][$field_name][$langcode]['select_other_text_input'])) {
+  if ($field[$langcode]['instance']['required'] && $form_state['values'][$field_name][$langcode][$delta]['select_other_list'] == 'other' && empty($form_state['values'][$field_name][$langcode][$delta]['select_other_text_input'])) {
     form_set_error($field_name . '[' . $langcode . '][' . $delta . '][select_other_text_input]', t('A non-empty value is required for this option.'));
   }
 
   // Non-required field value.
-  if (!$element['#required'] && $form_state['values'][$field_name][$langcode][$delta]['select_other_list'] == '-none') {
+  if (!$field[$langcode]['instance']['required'] && $form_state['values'][$field_name][$langcode][$delta]['select_other_list'] == '-none-') {
     form_set_value($element, array(NULL), $form_state);
   }
 }
