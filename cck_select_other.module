@@ -110,6 +110,9 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
     $otherdef = '';
   }
 
+  // This needs to be pulled out of our original element.
+  $description = $element['#description'];
+
   $element = array(
     '#type' => $instance['widget']['type'],
     '#default_value' => '',
@@ -122,7 +125,7 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
 
   $element['select_other_list'] = array(
     '#title' => t('%label', array('%label' => $instance['label'])),
-    '#description' => t('You may specify your own option.'),
+    '#description' => !empty($description) ? $description : t('You may specify your own option.'),
     '#type' => 'select',
     '#options' => $options,
     '#default_value' => check_plain($def),
@@ -162,7 +165,7 @@ function cck_select_other_widget_validate($element, &$form_state) {
   $langcode = $element['#parents'][1];
   $delta = $element['#parents'][2];
 
-  // Retrieve field info from $form_state. 
+  // Retrieve field info from $form_state.
   $field = $form_state['field'][$field_name];
 
   // Empty other field.
@@ -214,11 +217,11 @@ function cck_select_other_options($field) {
       $options[$key] = t('@option', array('@option' => $option));
     }
   }
-  
+
   if (!isset($options['other'])) {
     $options['other'] = t('Other');
   }
-  
+
   if (!$field['required']) {
     $options = array_merge(array('-none-' => t('-None-')), $options);
   }
@@ -226,7 +229,7 @@ function cck_select_other_options($field) {
   return $options;
 }
 
-/** 
+/**
  * CCK Select Other widget process callback
  * @param $element
  * @param &$form_state
@@ -236,7 +239,7 @@ function cck_select_other_process($element, &$form_state) {
   if (!isset($element['#name'])) {
     return $element;
   }
-  
+
   // No matches = not our field.
   $n = preg_match_all("/[A-Za-z0-9\-\_]+/", $element['#name'], $matches);
   if ($n == 0) {
@@ -312,7 +315,7 @@ function cck_select_other_pre_render($element, $form_state = NULL) {
   }
 
   if (!isset($element['#type']) || $element['#type'] <> 'cck_select_other') {
-    return $element; 
+    return $element;
   }
 
   // No matches = not our field.
