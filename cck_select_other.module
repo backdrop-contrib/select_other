@@ -85,7 +85,8 @@ function cck_select_other_field_widget_settings_form($field, $instance) {
  */
 function cck_select_other_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   $options = cck_select_other_options($instance);
-  $def = $instance['required'] ? '' : '-none-';
+  $def = $instance['required'] ? '' : '_none';
+  $otherdef = '';
 
   if (empty($items)) {
     $items[] = array('value' => '');
@@ -104,10 +105,6 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
   else if (isset($instance['default_value'])) {
     $def = isset($instance['default_value'][0]['select_other_list']) ? $instance['default_value'][0]['select_other_list'] : 'other';
     $otherdef = ($def == 'other') ? $instance['default_value'][0]['value'] : '';
-  }
-  else {
-    $def = $instance['required'] ? array_shift(array_values($options)) : '-none-';
-    $otherdef = '';
   }
 
   // This needs to be pulled out of our original element.
@@ -132,6 +129,7 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
     '#attributes' => array(
       'class' => array('form-text form-select select_other_list'),
     ),
+    '#required' => $instance['required'],
   );
 
   // @fixme - #states is REALLY slow here so I'm using my own shit again.
@@ -174,7 +172,7 @@ function cck_select_other_widget_validate($element, &$form_state) {
   }
 
   // Non-required field value.
-  if (!$field[$langcode]['instance']['required'] && $form_state['values'][$field_name][$langcode][$delta]['select_other_list'] == '-none-') {
+  if (!$field[$langcode]['instance']['required'] && $form_state['values'][$field_name][$langcode][$delta]['select_other_list'] == '_none') {
     form_set_value($element, array(NULL), $form_state);
   }
 }
@@ -223,7 +221,10 @@ function cck_select_other_options($field) {
   }
 
   if (!$field['required']) {
-    $options = array_merge(array('-none-' => t('-None-')), $options);
+    $options = array('_none' => t('- None - ')) + $options;
+  }
+  else {
+    $options = array('' => t('- Select a value -')) + $options;
   }
 
   return $options;
@@ -266,7 +267,7 @@ function cck_select_other_process($element, &$form_state) {
   $field_name = $reversed[2];
 
   if (isset($field_values) && !empty($field_values)) {
-    if ($field_values['select_other_list'] == '-none-') {
+    if ($field_values['select_other_list'] == '_none') {
       // If we are not a required field, then we do not set a value.
       $element['#value'] = '';
       $field_values = array(

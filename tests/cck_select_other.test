@@ -46,8 +46,8 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
       if ($i < 3) {
         $this->options .= "\n";
       }
-    } 
-    
+    }
+
     /* Create a new field on our content type */
     $field_label = $this->randomName(5);
     $field_name = strtolower($this->randomName(5));
@@ -60,7 +60,7 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     );
     $this->drupalPost($bundle_path . '/fields', $edit, 'Save');
     $edit = array(
-      'instance[required]' => TRUE, 
+      'instance[required]' => TRUE,
       'instance[widget][settings][select_list_options]' => $this->options,
       'instance[widget][settings][select_list_options_fieldset][advanced_options][select_list_options_php]' => '',
       'field_' . $field_name . '[und][0][select_other_list]' => 'other',
@@ -87,8 +87,7 @@ class CCKSelectOtherTest extends DrupalWebTestCase {
     $this->drupalLogout();
 
     $options_arr = cck_select_other_options($this->test_instance);
-    $options_arr_count = $this->test_instance['required'] ? 5 : 6;
-    $this->assertEqual($options_arr_count, count($options_arr), t('There are 5 = %count options set on the field.', array('%count' => count($options_arr))));
+    $this->assertEqual(6, count($options_arr), t('There are 6 = %count options set on the field.', array('%count' => count($options_arr))));
   }
 
   /**
@@ -133,9 +132,11 @@ class CCKSelectOtherBasicTest extends CCKSelectOtherTest {
    */
   function testSelectFieldValue() {
     $options_arr = cck_select_other_options($this->test_instance);
-    $this->assertEqual(5, count($options_arr), t('There are 5 = %count options set on the field.', array('%count' => count($options_arr))));
+    $this->assertEqual(6, count($options_arr), t('There are 6 = %count options set on the field.', array('%count' => count($options_arr))));
 
-    $my_option = array_rand(cck_select_other_options($this->test_instance));
+    do {
+      $my_option = array_rand(cck_select_other_options($this->test_instance));
+    } while (in_array($my_option, array('other', '_none', '')));
 
     $this->drupalLogin($this->web_user);
 
@@ -317,14 +318,14 @@ class CCKSelectOtherPHPOptionsTest extends CCKSelectOtherTest {
 
     $this->drupalPost($bundle_path . '/fields/' . $this->test_field['field_name'], $edit, t('Save settings'));
     $this->test_field = field_info_field($this->test_field['field_name']);
-    
+
     $this->drupalLogout();
 
     // Login as web user and make sure that we are selecting a value from
     // the php generated list.
     $this->drupalLogin($this->web_user);
 
-    $select_field = $this->test_field['field_name'] . '[und][0][select_other_list]';      
+    $select_field = $this->test_field['field_name'] . '[und][0][select_other_list]';
     $edit = array(
       $select_field => 'blah_blah_',
     );
@@ -363,7 +364,7 @@ class CCKSelectOtherMultipleFieldsTest extends CCKSelectOtherTest {
 
     do {
       $firstoption = array_rand(cck_select_other_options($this->test_instance));
-    } while ($firstoption == 'other');
+    } while (in_array($firstoption, array('other', '_none', '')));
 
     // Create a new field and instance
     $this->second_field = $this->test_field;
@@ -397,8 +398,8 @@ class CCKSelectOtherMultipleFieldsTest extends CCKSelectOtherTest {
     );
 
     $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
-    $this->assertRaw($firstoption, t('Found option, %option, for field, %field.', array('%option' => $firstoption, '%field' => $this->test_field['field_name']))); 
-    $this->assertRaw($secondoption, t('Found option, %option, for field, %field.', array('%option' => $secondoption, '%field' => $this->second_field['field_name']))); 
+    $this->assertRaw($firstoption, t('Found option, %option, for field, %field.', array('%option' => $firstoption, '%field' => $this->test_field['field_name'])));
+    $this->assertRaw($secondoption, t('Found option, %option, for field, %field.', array('%option' => $secondoption, '%field' => $this->second_field['field_name'])));
 
     // Check our edit page again.
     $this->drupalGet('node/' . $this->test_node->nid . '/edit');
@@ -432,7 +433,7 @@ class CCKSelectOtherMultipleValueListTest extends CCKSelectOtherTest {
     $options_arr = array_keys(cck_select_other_options($this->test_instance));
     $edit = array(
       'field[cardinality]' => 2,
-      $this->test_field['field_name'] . '[und][0][select_other_list]' => $options_arr[0],
+      $this->test_field['field_name'] . '[und][0][select_other_list]' => $options_arr[1],
     );
     $this->drupalPost('admin/structure/types/manage/' . $this->test_node->type . '/fields/' . $this->test_field['field_name'], $edit, 'Save settings');
     field_cache_clear(); // Ugh...
@@ -460,9 +461,10 @@ class CCKSelectOtherMultipleValueListTest extends CCKSelectOtherTest {
     // In unlimited situation, there are two elements by default.
     // We'll try add more later.
     $options_arr = cck_select_other_options($this->test_instance);
-    $firstoption = array_rand(cck_select_other_options($this->test_instance));
+    do {
+      $firstoption = array_rand(cck_select_other_options($this->test_instance));
+    } while (in_array($firstoption, array('other', '_none', '')));
     $otheroption = $this->randomName(16);
-    $randomoption = $this->randomName(16);
 
     $edit = array(
       $this->test_instance['field_name'] . '[und][0][select_other_list]' => 'other',
@@ -471,13 +473,9 @@ class CCKSelectOtherMultipleValueListTest extends CCKSelectOtherTest {
       $this->test_instance['field_name'] . '[und][1][select_other_list]' => $firstoption,
     );
 
-    if ($firstoption == 'other') {
-      $edit[$this->test_instance['field_name'] . '[und][1][select_other_text_input]'] = $randomoption;
-    }
-
     $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
     $this->assertRaw($otheroption, t('Found first select other list option on node.'));
-    $this->assertRaw(($firstoption == 'other') ? $randomoption : $firstoption, t('Found second select other list option on node.'));
+    $this->assertRaw($firstoption, t('Found second select other list option on node.'));
 
     $this->drupalLogout();
   }
@@ -488,7 +486,7 @@ class CCKSelectOtherMultipleValueListTest extends CCKSelectOtherTest {
  * @class CCKSelectOtherNotRequiredTest
  */
 class CCKSelectOtherNotRequiredTest extends CCKSelectOtherTest {
-  
+
   public static function getInfo() {
     return array(
       'name' => t('CCK Select Other Not Required'),
@@ -496,10 +494,10 @@ class CCKSelectOtherNotRequiredTest extends CCKSelectOtherTest {
       'group' => t('Field UI'),
     );
   }
-  
+
   function setUp() {
     parent::setUp();
-    
+
     $this->test_instance['required'] = FALSE;
     field_update_instance($this->test_instance);
     $this->test_instance = field_info_instance('node', $this->test_field['field_name'], $this->test_node->type);
@@ -513,22 +511,22 @@ class CCKSelectOtherNotRequiredTest extends CCKSelectOtherTest {
     $this->drupalLogin($this->web_user);
 
     $name = substr($this->test_field['field_name'], 6);
-    
+
     // Assert that we have -none- as the option in our select list.
     $this->drupalGet('node/' . $this->test_node->nid . '/edit');
-    $this->assertOptionSelected('edit-field-' . $name . '-und-0-select-other-list', '-none-', t('-None- option selected in select list.'));
+    $this->assertOptionSelected('edit-field-' . $name . '-und-0-select-other-list', '_none', t('- None - option selected in select list.'));
 
     // Post to the node, and make sure that -none- is the value and that value ends up as empty.
     $edit = array(
-      $this->test_instance['field_name'] . '[und][0][select_other_list]' => '-none-',            
+      $this->test_instance['field_name'] . '[und][0][select_other_list]' => '_none',
     );
     $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
     $this->assertNoRaw($this->test_instance['label']);
-    
+
     // Assert the node object as well.
-    $node = node_load($this->test_node->nid);    
+    $node = node_load($this->test_node->nid);
     $this->assertTrue(empty($node->{$this->test_instance['field_name']}), t('Select other did not save any value for non-required field.'));
-    
+
     $this->drupalLogout();
   }
 
@@ -540,14 +538,14 @@ class CCKSelectOtherNotRequiredTest extends CCKSelectOtherTest {
 
     // Save a value into the node and assert that it was saved.
     $edit = array(
-      $this->test_instance['field_name'] . '[und][0][select_other_list]' => 'other', 
+      $this->test_instance['field_name'] . '[und][0][select_other_list]' => 'other',
       $this->test_instance['field_name'] . '[und][0][select_other_text_input]' => $this->randomName(15),
     );
     $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
     $this->assertRaw($this->test_instance['label']);
 
     $edit = array(
-      $this->test_instance['field_name'] . '[und][0][select_other_list]' => '-none-',
+      $this->test_instance['field_name'] . '[und][0][select_other_list]' => '_none',
     );
     $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
     $this->assertNoRaw($this->test_instance['label']);
@@ -558,5 +556,5 @@ class CCKSelectOtherNotRequiredTest extends CCKSelectOtherTest {
 
     $this->drupalLogout();
   }
-  
+
 }
