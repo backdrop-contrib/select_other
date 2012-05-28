@@ -44,6 +44,43 @@ function cck_select_other_element_info() {
 }
 
 /**
+ * Implementation of hook_field_formatter_info().
+ */
+function cck_select_other_field_formatter_info() {
+  return array(
+    'cck_select_other' => array(
+      'label' => t('Select other'),
+      'description' => t('The default list module formatters do not take into account select other list widgets.'),
+      'field types' => array('list_integer', 'list_float', 'list_text', 'list_boolean'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_field_formatter_view().
+ */
+function cck_select_other_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  if ($display['type'] == 'cck_select_other') {
+    // Only format for the cck_select_other display (just in case).
+
+    $settings = $instance['widget']['settings'];
+    $options = cck_select_other_options($instance);
+
+    foreach ($items as $delta => $item) {
+
+      $value = isset($options[$item['value']]) ? field_filter_xss($options[$item['value']]) : field_filter_xss($item['value']);
+
+      $element[$delta] = array(
+        '#markup' => $value,
+      );
+    }
+
+    return $element;
+  }
+}
+
+
+/**
  * Implementation of hook_field_widget_settings_form().
  */
 function cck_select_other_field_widget_settings_form($field, $instance) {
