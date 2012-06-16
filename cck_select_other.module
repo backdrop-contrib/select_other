@@ -186,10 +186,23 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
  * Implementation of hook_form_alter().
  */
 function cck_select_other_form_alter(&$form, &$form_state, $form_id) {
-  // @todo fix Drupal core field bug so that field validation functions are alterable.
-  if ( $form_id == 'field_ui_field_edit_form' && isset($form['field']['settings']['allowed_values']) && isset($form['widget']['settings']['allowed_values']) ) {
+
+  if ($form_id == 'field_ui_field_edit_form' &&
+      isset($form_state['build_info']['args'][0]['widget']) && 
+      $form_state['build_info']['args'][0]['widget']['type'] == 'cck_select_other' &&
+      isset($form['field']['settings']['allowed_values']) &&
+      isset($form['widget']['settings']['allowed_values'])) {
+    // If the field is already created, just remove the validation callback.
+    // @todo fix Drupal core to not require a field validation function or make it alterable.
     $form['field']['settings']['allowed_values']['#element_validate'] = NULL;
   }
+  else if ($form_id == 'field_ui_field_settings_form' &&
+           isset($form_state['build_info']['args'][0]['widget']) && 
+           $form_state['build_info']['args'][0]['widget']['type'] == 'cck_select_other') {
+    // If the field is new, then we need to provide some better feedback to theh user about this. 
+    $form['field']['settings']['allowed_values']['#prefix'] = '<div class="messages warning">' . t('Select other lists do not require allowed values. You will be prompted to provide select list options after you save field settings. <strong>It is highly recommended that you do not provide allowed values during this step.</strong>') . '</div>';
+  }
+
 }
 
 /**
