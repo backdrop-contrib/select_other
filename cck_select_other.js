@@ -28,6 +28,11 @@
             // Add parent() to hide input wrapper
             $('input#edit-' + text_id).parent().css('display', ($(this).val() == "other") ? 'block' : 'none');
           }).trigger(ActionBind);
+
+          $('input#edit-' + select_id + '-other').bind(ActionBind,function() {
+            // Checkbox
+            $('input#edit-' + text_id).parent().css('display', ($(this + ':checked').length) ? 'block' : 'none');
+          });
         });
       });
     }
