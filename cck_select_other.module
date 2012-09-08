@@ -361,6 +361,15 @@ function cck_select_other_process($element, &$form_state) {
 function cck_select_other_pre_render($element, $form_state = NULL) {
   static $js;
 
+  $errors = form_get_errors();
+  if (!empty($errors)) {
+    // Validation errors for the text input box get lost so need to be injected.
+    $text_element = $element['#name'] . '[select_other_text_input]';
+    if (in_array($text_element, array_keys($errors))) {
+      $element['select_other_text_input']['#attributes']['class'][] = 'error';
+    }
+  }
+
   if (!isset($form_state)) {
     return $element;
   }
