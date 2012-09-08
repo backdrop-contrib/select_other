@@ -221,6 +221,8 @@ class CCKSelectOtherBasicTest extends CCKSelectOtherTest {
     $field_str = str_replace('_', '-', $this->test_field['field_name']);
     $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
     $this->assertRaw(t('A non-empty value is required for this option.'), t('Failed validation for required field.'));
+    $elements = $this->xpath('//input[@name="' . $text_field .'" and contains(@class, "error")]');
+    $this->assertEqual(count($elements), 1, t('Found error class on %field element.', array('%field' => $text_field)));
 
     $this->drupalLogout();
   }
