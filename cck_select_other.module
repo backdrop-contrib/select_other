@@ -218,7 +218,7 @@ function cck_select_other_widget_validate($element, &$form_state) {
 
   // Empty other field.
   if ($field[$langcode]['instance']['required'] && $form_state['values'][$field_name][$langcode][$delta]['select_other_list'] == 'other' && empty($form_state['values'][$field_name][$langcode][$delta]['select_other_text_input'])) {
-    form_set_error($field_name . '[' . $langcode . '][' . $delta . '][select_other_text_input]', t('A non-empty value is required for this option.'));
+    form_set_error($element['#name'], t('A non-empty value is required for this option.'));
   }
 
   // Non-required field value.
