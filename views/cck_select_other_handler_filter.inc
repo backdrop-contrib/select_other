@@ -29,8 +29,6 @@ class cck_select_other_handler_filter extends views_handler_filter_in_operator {
     $form[$identifier]['select_other_list']['#parents'] = array('options', $identifier, 'select_other_list');
     $form[$identifier]['select_other_text_input']['#parents'] = array('options', $identifier, 'select_other_text_input');
 
-    $field_id = str_replace('_', '-', 'options-' . $identifier);
-    drupal_add_js(array('CCKSelectOther' => array(array('field_id' => $field_id))), array('type' => 'setting'));
   }
 
   function exposed_submit($form, &$form_state) {
@@ -56,8 +54,6 @@ class cck_select_other_handler_filter extends views_handler_filter_in_operator {
    * Value form
    */
   function value_form(&$form, &$form_state) {
-    static $js;
-
     parent::value_form($form, $form_state);
 
     $otherdef = '';
@@ -96,12 +92,6 @@ class cck_select_other_handler_filter extends views_handler_filter_in_operator {
         '#size' => 10,
       ),
     );
-
-    if (!$js) {
-      drupal_add_js(drupal_get_path('module', 'cck_select_other') . '/cck_select_other.js');
-      $js = TRUE;
-    }
-    drupal_add_js(array('CCKSelectOther' => array(array('field_id' => 'options-value'))), array('type' => 'setting'));
   }
 
   function value_submit($form, &$form_state) {
