@@ -274,11 +274,11 @@ class CCKSelectOtherAllowedValuesTest extends CCKSelectOtherTest {
 
     // try to save a disallowed value
     $this->drupalPost('node/' . $this->test_node->nid . '/edit', $badEdit, t('Save'));
-    $this->assertRaw(t('list_illegal_value'), t('Successfully blocked submission of DisallowedValue.'));
+    $this->assertText(t('@name: illegal value.', array('@name' => $this->test_instance['label'])), t('Successfully blocked submission of DisallowedValue.'));
 
     // try to save an allowed value
     $this->drupalPost('node/' . $this->test_node->nid . '/edit', $goodEdit, t('Save'));
-    $this->assertNoRaw(t('list_illegal_value'), t('Successfully saved form with allowed value, AllowedValue.'));
+    $this->assertNoText(t('@name: illegal value.', array('@name' => $this->test_instance['label'])), t('Successfully saved form with allowed value, AllowedValue.'));
     $this->assertRaw('AllowedValue', t('Found %allowed allowed value on node view.', array('%allowed' => 'AllowedValue')));
 
     $this->drupalLogout();
