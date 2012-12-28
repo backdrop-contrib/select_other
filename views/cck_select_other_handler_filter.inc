@@ -56,7 +56,7 @@ class cck_select_other_handler_filter extends views_handler_filter_in_operator {
     drupal_add_js(array('CCKSelectOther' => array(array('field_id' => $field_id))), array('type' => 'setting'));
   }
 
-  function exposed_submit($form, &$form_state) {
+  function exposed_submit(&$form, &$form_state) {
     $identifier = $this->options['expose']['identifier'];
     $values = $form_state['values']['options'][$identifier];
     $form_state['values'][$identifier] = array();
