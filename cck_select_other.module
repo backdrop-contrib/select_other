@@ -209,20 +209,38 @@ function cck_select_other_form_alter(&$form, &$form_state, $form_id) {
  * Validate empty text input for other selection.
  */
 function cck_select_other_widget_validate($element, &$form_state) {
-  $field_name = $element['#parents'][0];
-  $langcode = $element['#parents'][1];
-  $delta = $element['#parents'][2];
+  // Reverse element parents because of element containers, notably profile2.
+  $reversed = array_reverse($element['#parents']);
 
-  // Retrieve field info from $form_state.
-  $field = $form_state['field'][$field_name];
+  $element_name = array_shift($reversed);
+  $delta = array_shift($reversed);
+  $langcode = array_shift($reversed);
+  $field_name = array_shift($reversed);
 
-  // Empty other field.
-  if ($field[$langcode]['instance']['required'] && $form_state['values'][$field_name][$langcode][$delta]['select_other_list'] == 'other' && empty($form_state['values'][$field_name][$langcode][$delta]['select_other_text_input'])) {
+  if (isset($form_state['field'][$field_name])) {
+    // Retrieve stored field & instance info and form state values.
+    $field = $form_state['field'][$field_name];
+    $values = &$form_state['values'];
+  }
+  elseif (!empty($reversed) && isset($form_state['field']['#parents'])) {
+    // Profile 2 exception.
+    $container = array_shift($reversed);
+    $field = $form_state['field']['#parents'][$container]['#fields'][$field_name];
+    $values = &$form_state['values'][$container];
+  }
+  else {
+    // Catastrophic error..?
+    form_set_error($element['#name'], t('An error occurred trying to validate this field.'));
+    watchdog('cck_select_other', 'Could not find field info in form state array for select other field, %name.', array('%name' => $field_name), WATCHDOG_ERROR);
+  }
+
+  if ($field[$langcode]['instance']['required'] && $values[$field_name][$langcode][$delta]['select_other_list'] == 'other' && empty($values[$field_name][$langcode][$delta]['select_other_text_input'])) {
+    // Empty other field.
     form_set_error($element['#name'], t('A non-empty value is required for this option.'));
   }
 
-  // Non-required field value.
-  if (!$field[$langcode]['instance']['required'] && $form_state['values'][$field_name][$langcode][$delta]['select_other_list'] == '_none') {
+  if (!$field[$langcode]['instance']['required'] && $values[$field_name][$langcode][$delta]['select_other_list'] == '_none') {
+    // Non-required field value.
     form_set_value($element, array(NULL), $form_state);
   }
 }
@@ -291,17 +309,7 @@ function cck_select_other_process($element, &$form_state) {
     return $element;
   }
 
-  // No matches = not our field.
-  $n = preg_match_all("/[A-Za-z0-9\-\_]+/", $element['#name'], $matches);
-  if ($n == 0) {
-    return $element;
-  }
-
-  // By any chance if we don't have any array keys, get out of here.
-  $keys = isset($matches[0]) ? $matches[0]: NULL;
-  if (!isset($keys)) {
-    return $element;
-  }
+  $keys = $element['#parents'];
 
   // field_values need to be a reference!
   $field_values = &$form_state['values'];
@@ -309,7 +317,7 @@ function cck_select_other_process($element, &$form_state) {
     $field_values = &$field_values[$key];
   }
 
-  // We have to reverse the array keys because of element containers (profile2).
+  // Reverse array parents because of element containers, notably profile2.
   $reversed = array_reverse($keys);
 
   $delta = $reversed[0];
