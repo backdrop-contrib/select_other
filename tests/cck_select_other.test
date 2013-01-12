@@ -229,6 +229,41 @@ class CCKSelectOtherBasicTest extends CCKSelectOtherTest {
 }
 
 /**
+ * Assert HTML entities are not double-encoded.
+ */
+class CCKSelectOtherHTMLEntitiesTest extends CCKSelectOtherTest {
+
+  static public function getInfo() {
+    return array(
+      'name' => 'CCK Select Other HTML Entities',
+      'description' => 'Assert HTML entities are not double-encoded.',
+      'group' => t('Field UI'),
+    );
+  }
+
+  /**
+   * Assert HTML entities are not double-encoded.
+   */
+  function testHTMLEntities() {
+    $this->drupalLogin($this->web_user);
+
+    $select_field = $this->test_field['field_name'] . '[und][0][select_other_list]';
+    $text_field = $this->test_field['field_name'] . '[und][0][select_other_text_input]';
+    $edit = array(
+      $select_field => 'other',
+      $text_field => '&',
+    );
+
+    $this->drupalPost('node/' . $this->test_node->nid . '/edit', $edit, t('Save'));
+    $this->drupalGet('node/' . $this->test_node->nid . '/edit');
+    $this->assertNoFieldByName($text_field, '&amp;', t('Correctly encoded HTML entity.'));
+
+    $this->drupalLogout();
+  }
+
+}
+
+/**
  * @class
  *
  */

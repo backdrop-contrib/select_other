@@ -162,7 +162,7 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
     '#description' => !empty($description) ? $description : t('You may specify your own option.'),
     '#type' => 'select',
     '#options' => $options,
-    '#default_value' => check_plain($def),
+    '#default_value' => $def,
     '#attributes' => array(
       'class' => array('form-text form-select select_other_list'),
     ),
@@ -172,7 +172,7 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
   // @fixme - #states is REALLY slow here so I'm using my own shit again.
   $element['select_other_text_input'] = array(
     '#type' => 'textfield',
-    '#default_value' => check_plain($otherdef),
+    '#default_value' => $otherdef,
     '#attributes' => array(
       'class' => array('form-text select_other_text_input'),
     ),
