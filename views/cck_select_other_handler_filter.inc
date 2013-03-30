@@ -52,6 +52,12 @@ class cck_select_other_handler_filter extends views_handler_filter_in_operator {
     $form[$identifier]['select_other_list']['#parents'] = array('options', $identifier, 'select_other_list');
     $form[$identifier]['select_other_text_input']['#parents'] = array('options', $identifier, 'select_other_text_input');
 
+    if (empty($form_state['exposed']) || empty($this->options['expose']['required'])) {
+      // If we're configuring an exposed filter, add an <Any> option.
+      $any_label = variable_get('views_exposed_filter_any_label', 'new_any') == 'old_any' ? '<Any>' : t('- Any -');
+      $form[$identifier]['select_other_list']['#options'] = array('All' => $any_label) + $form[$identifier]['select_other_list']['#options'];
+    }
+
     $field_id = str_replace('_', '-', 'options-' . $identifier);
     drupal_add_js(array('CCKSelectOther' => array(array('field_id' => $field_id))), array('type' => 'setting'));
   }
@@ -143,6 +149,7 @@ class cck_select_other_handler_filter extends views_handler_filter_in_operator {
 
     // Get rid of none options.
     unset($this->value_options['']);
+    unset($this->value_options['_none']);
   }
   
   function accept_exposed_input($input) {
