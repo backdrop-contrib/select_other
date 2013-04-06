@@ -158,7 +158,7 @@ function cck_select_other_field_widget_form(&$form, &$form_state, $field, $insta
   );
 
   $element['select_other_list'] = array(
-    '#title' => t('%label', array('%label' => $instance['label'])),
+    '#title' => check_plain($instance['label']),
     '#description' => !empty($description) ? $description : t('You may specify your own option.'),
     '#type' => 'select',
     '#options' => $options,
