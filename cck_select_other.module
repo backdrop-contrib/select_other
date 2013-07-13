@@ -13,7 +13,7 @@ function cck_select_other_field_widget_info() {
     'cck_select_other' => array(
       'label' => t('Select other list'),
       'description' => t('Provides an "other" option, which allows the user to provide an alternate value.'),
-      'field types' => array('list', 'list_number', 'list_text'),
+      'field types' => array('list_integer', 'list_float', 'list_text'),
       'settings' => array(
         'select_list_options' => '',
         'select_list_options_fieldset' => array(
@@ -30,20 +30,6 @@ function cck_select_other_field_widget_info() {
 }
 
 /**
- * Implementation of hook_element_info().
- */
-function cck_select_other_element_info() {
-  return array(
-    'cck_select_other' => array(
-      '#input' => TRUE,
-      '#process' => array('cck_select_other_process'),
-      '#post_render' => array('cck_select_other_post_render'),
-      '#pre_render' => array('cck_select_other_pre_render'),
-    ),
-  );
-}
-
-/**
  * Implementation of hook_field_formatter_info().
  */
 function cck_select_other_field_formatter_info() {
@@ -51,7 +37,7 @@ function cck_select_other_field_formatter_info() {
     'cck_select_other' => array(
       'label' => t('Select other'),
       'description' => t('The default list module formatters do not take into account select other list widgets.'),
-      'field types' => array('list_integer', 'list_float', 'list_text', 'list_boolean'),
+      'field types' => array('list_integer', 'list_float', 'list_text'),
     ),
   );
 }
@@ -65,9 +51,9 @@ function cck_select_other_field_formatter_view($entity_type, $entity, $field, $i
 
     $settings = $instance['widget']['settings'];
     $options = cck_select_other_options($instance);
+    $element = array();
 
     foreach ($items as $delta => $item) {
-
       $value = isset($options[$item['value']]) ? field_filter_xss($options[$item['value']]) : field_filter_xss($item['value']);
 
       $element[$delta] = array(
@@ -122,62 +108,69 @@ function cck_select_other_field_widget_settings_form($field, $instance) {
  */
 function cck_select_other_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   $options = cck_select_other_options($instance);
-  $def = $instance['required'] ? '' : '_none';
-  $otherdef = '';
 
-  if (empty($items)) {
-    $items[] = array('value' => '');
-  }
-
-  if (!isset($items[$delta])) {
-    $items[$delta] = array('value' => '');
-  }
-
-  // Set default value if we have instance data for delta, a default
-  // value setting, or something basic if none at all.
-  if (!empty($items[$delta]['value'])) {
-    $def = (in_array($items[$delta]['value'], array_keys($options))) ? $items[$delta]['value'] : 'other';
-    $otherdef = ($def == 'other') ? $items[$delta]['value'] : '';
-  }
-  else if (isset($instance['default_value'])) {
-    $def = isset($instance['default_value'][0]['select_other_list']) ? $instance['default_value'][0]['select_other_list'] : 'other';
-    $otherdef = ($def == 'other') ? $instance['default_value'][0]['value'] : '';
-  }
-
-  // This needs to be pulled out of our original element.
-  $description = $element['#description'];
-
-  $element = array(
-    '#type' => $instance['widget']['type'],
-    '#default_value' => '',
-    '#prefix' => '<div id="field-' . substr($field['field_name'], 6) . '-' . $langcode . '-' . $delta . '-wrapper">',
-    '#suffix' => '</div>',
-    '#field_name' => $field['field_name'], // Required fields for field_conditional_state.
-    '#field_parents' => isset($form['#parents']) ? $form['#parents'] : array(),
+  // Setup select other wrapper.
+  $element += array(
     '#bundle' => $instance['bundle'],
+    '#field_name' => $field['field_name'],
+    '#langcode' => $langcode,
+    '#element_validate' => array('cck_select_other_widget_validate'),
+    '#pre_render' => array('cck_select_other_widget_pre_render'),
+    '#attributes' => array(
+      'class' => array('form-select-other-wrapper', 'cck-select-other-wrapper'),
+    ),
   );
 
+  // Setup select list.
   $element['select_other_list'] = array(
-    '#title' => check_plain($instance['label']),
-    '#description' => !empty($description) ? $description : t('You may specify your own option.'),
+    '#title' => $element['#title'],
+    '#description' => $element['#description'],
     '#type' => 'select',
     '#options' => $options,
-    '#default_value' => $def,
-    '#attributes' => array(
-      'class' => array('form-text form-select select_other_list'),
-    ),
     '#required' => $instance['required'],
+    '#attributes' => array(
+      'class' => array('form-text form-select form-select-other-list'),
+    ),
   );
 
-  // @fixme - #states is REALLY slow here so I'm using my own shit again.
+  // Setup text input.
   $element['select_other_text_input'] = array(
     '#type' => 'textfield',
-    '#default_value' => $otherdef,
+    '#title' => t('Provide other option'),
+    '#title_display' => 'invisible',
+    '#size' => 60,
     '#attributes' => array(
-      'class' => array('form-text select_other_text_input'),
+      'class' => array('form-text form-select-other-text-input'),
     ),
-    '#element_validate' => array('cck_select_other_widget_validate'), // Always send through this validate function!
   );
+
+  // Default empty values.
+  $list_default = $instance['required'] ? '' : '_none';
+  $text_default = '';
+  $value = '';
+
+  if (isset($items[$delta]['value'])) {
+    // Use the value provided in items.
+    $value = $items[$delta]['value'];
+  }
+  elseif (isset($instance['default_value'])) {
+    // Use the default value of the field if it is set.
+    $value = $instance['default_value'][0]['value'];
+  }
+
+  if ($value && in_array($value, array_keys($options))) {
+    // Value is not empty and value is in the list.
+    $list_default = $value;
+  }
+  elseif ($value) {
+    // Set the list default to other.
+    $list_default = 'other';
+    $text_default = $value;
+  }
+
+  // Set default values.
+  $element['select_other_list']['#default_value'] = $list_default;
+  $element['select_other_text_input']['#default_value'] = $text_default;
 
   return $element;
 }
@@ -209,40 +202,86 @@ function cck_select_other_form_alter(&$form, &$form_state, $form_id) {
  * Validate empty text input for other selection.
  */
 function cck_select_other_widget_validate($element, &$form_state) {
-  // Reverse element parents because of element containers, notably profile2.
-  $reversed = array_reverse($element['#parents']);
+  $values = drupal_array_get_nested_value($form_state['values'], $element['#array_parents']);
 
-  $element_name = array_shift($reversed);
-  $delta = array_shift($reversed);
-  $langcode = array_shift($reversed);
-  $field_name = array_shift($reversed);
-
-  if (isset($form_state['field'][$field_name])) {
-    // Retrieve stored field & instance info and form state values.
-    $field = $form_state['field'][$field_name];
-    $values = &$form_state['values'];
+  if (empty($values)) {
+    // Field UI does not behave in the same way as normal form operations, and
+    // values should be extracted from $element['#parents'] instead.
+    $values = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
   }
-  elseif (!empty($reversed) && isset($form_state['field']['#parents'])) {
-    // Profile 2 exception.
-    $container = array_shift($reversed);
-    $field = $form_state['field']['#parents'][$container]['#fields'][$field_name];
-    $values = &$form_state['values'][$container];
+
+  if (!$element['select_other_list']['#required'] && $values['select_other_list'] == '_none') {
+    // Empty select list option.
+    form_set_value($element, array('value' => NULL), $form_state);
+  }
+  elseif ($element['select_other_list']['#required'] && $values['select_other_list'] == '') {
+    // Empty select list option for required field.
+    form_set_value($element, array('value' => ''), $form_state);
+    form_error($element, t('You must select an option.'));
+  }
+  elseif ($element['select_other_list']['#required'] && $values['select_other_list'] == 'other' && !$values['select_other_text_input']) {
+    // Empty text input for required field.
+    form_set_value($element, array('value' => NULL), $form_state);
+    form_error($element['select_other_text_input'], t('You must provide a value for this option.'));
+  }
+  elseif ($values['select_other_list'] == 'other' && $values['select_other_text_input']) {
+    // Non-empty text input value.
+    form_set_value($element, array('value' => $values['select_other_text_input']), $form_state);
+  }
+  elseif ($values['select_other_list'] == 'other' && !$values['select_other_text_input']) {
+    // Empty text for non-required field.
+    form_set_value($element, array('value' => NULL), $form_state);
   }
   else {
-    // Catastrophic error..?
-    form_set_error($element['#name'], t('An error occurred trying to validate this field.'));
-    watchdog('cck_select_other', 'Could not find field info in form state array for select other field, %name.', array('%name' => $field_name), WATCHDOG_ERROR);
+    // Non-empty select list value.
+    form_set_value($element, array('value' => $values['select_other_list']), $form_state);
   }
 
-  if ($field[$langcode]['instance']['required'] && $values[$field_name][$langcode][$delta]['select_other_list'] == 'other' && empty($values[$field_name][$langcode][$delta]['select_other_text_input'])) {
-    // Empty other field.
-    form_set_error($element['#name'], t('A non-empty value is required for this option.'));
-  }
+  $field = field_info_field($element['#field_name']);
 
-  if (!$field[$langcode]['instance']['required'] && $values[$field_name][$langcode][$delta]['select_other_list'] == '_none') {
-    // Non-required field value.
-    form_set_value($element, array(NULL), $form_state);
+  // Validate integer and float values for other options.
+  if ($field['type'] == 'list_integer' && $values['select_other_list'] == 'other') {
+    if (!preg_match('/^-?\d+$/', $values['select_other_text_input'])) {
+      form_error($element['select_other_text_input'], t('Only integers are allowed.'));
+    }
   }
+  elseif ($field['type'] == 'list_float' && $values['select_other_list'] == 'other') {
+    if (!is_numeric($values['select_other_text_input'])) {
+      form_error($element['select_other_text_input'], t('Only valid numbers are allowed.'));
+    }
+  }
+}
+
+/**
+ * Attaches Javascript during pre build because this is when array parents
+ * should be defined to take advantage of modules that alter the element
+ * structure such as field_collection.
+ *
+ * @param $element
+ *   The element array.
+ * @return array
+ *   The element array.
+ */
+function cck_select_other_widget_pre_render($element) {
+  $key = $element['#field_name'] . '_' . $element['#delta'];
+  $settings = array(
+    $key => array(
+      'list_element' => $element['select_other_list']['#id'],
+      'input_element' => $element['select_other_text_input']['#id'],
+    ),
+  );
+
+  $element['#attached'] = array(
+    'js' => array(
+      array(
+        'data' => array('CCKSelectOther' => $settings),
+        'type' => 'setting',
+      ),
+      drupal_get_path('module', 'cck_select_other') . '/cck_select_other.js',
+    ),
+  );
+
+  return $element;
 }
 
 /**
@@ -296,157 +335,6 @@ function cck_select_other_options($field) {
   }
 
   return $options;
-}
-
-/**
- * CCK Select Other widget process callback
- * @param $element
- * @param &$form_state
- * @return $element;
- */
-function cck_select_other_process($element, &$form_state) {
-  if (!isset($element['#name'])) {
-    return $element;
-  }
-
-  $keys = $element['#parents'];
-
-  // field_values need to be a reference!
-  $field_values = &$form_state['values'];
-  foreach ($keys as $key) {
-    $field_values = &$field_values[$key];
-  }
-
-  // Reverse array parents because of element containers, notably profile2.
-  $reversed = array_reverse($keys);
-
-  $delta = $reversed[0];
-  $langcode = $reversed[1];
-  $field_name = $reversed[2];
-
-  if (isset($field_values) && !empty($field_values)) {
-    if ($field_values['select_other_list'] == '_none') {
-      // If we are not a required field, then we do not set a value.
-      $element['#value'] = '';
-      $field_values = array(
-        'value' => '',
-      );
-    }
-    else if ($field_values['select_other_list'] == 'other') {
-      // Use text input if we have 'other' selected
-      $element['#value'] = $field_values['select_other_text_input'];
-      $field_values = array(
-        'value' => $field_values['select_other_text_input'],
-      );
-    }
-    else {
-      // Use the select list otherwise
-      $element['#value'] = $field_values['select_other_list'];
-      $field_values = array(
-        'value' => $field_values['select_other_list'],
-      );
-    }
-
-    return $element;
-  }
-  else {
-    $element['#value'] = '';
-    if (isset($element['select_other_list']['#default_value'])) {
-      $element['select_other_list']['#value'] = $element['select_other_list']['#default_value'];
-    }
-  }
-
-  return $element;
-}
-
-/**
- * Pre render callback for the form so we can recreate the fake form after it gets
- * blown away by the CCK process callback.
- * @param $element the element
- * @param $form_state
- * @return $form
- */
-function cck_select_other_pre_render($element, $form_state = NULL) {
-  static $js;
-
-  $errors = form_get_errors();
-  if (!empty($errors)) {
-    // Validation errors for the text input box get lost so need to be injected.
-    $text_element = $element['#name'] . '[select_other_text_input]';
-    if (in_array($text_element, array_keys($errors))) {
-      $element['select_other_text_input']['#attributes']['class'][] = 'error';
-    }
-  }
-
-  if (!isset($form_state)) {
-    return $element;
-  }
-
-  if (!isset($element['#type']) || $element['#type'] <> 'cck_select_other') {
-    return $element;
-  }
-
-  // No matches = not our field.
-  $n = preg_match_all("/[A-Za-z0-9\-\_]+/", $element['#name'], $matches);
-  if ($n == 0) {
-    return $element;
-  }
-
-  // By any chance if we don't have any array keys, get out of here.
-  $keys = isset($matches[0]) ? $matches[0]: NULL;
-  if (!isset($keys)) {
-   return $element;
-  }
-
-  foreach ($keys as $key => $val) {
-    $keys[$key] = preg_replace("/_/", '-', $val);
-  }
-  $field_id = implode('-', $keys);
-
-  if (!$js) {
-    drupal_add_js(drupal_get_path('module', 'cck_select_other') . '/cck_select_other.js');
-    $js = TRUE;
-  }
-  drupal_add_js(array('CCKSelectOther' => array(array('field_id' => $field_id))), array('type' => 'setting'));
-}
-
-/**
- * Post-render callback to add javascript functionality
- * @param $content
- * @param $element
- * @return $form
- */
-function cck_select_other_post_render($content, $element) {
-  static $js;
-
-  if ($element['#type'] <> 'cck_select_other') {
-    return $content;
-  }
-
-  // No matches = not our field.
-  $n = preg_match_all("/[A-Za-z0-9\-\_]+/", $element['#name'], $matches);
-  if ($n == 0) {
-    return $element;
-  }
-
-  // By any chance if we don't have any array keys, get out of here.
-  $keys = isset($matches[0]) ? $matches[0]: NULL;
-  if (!isset($keys)) {
-   return $element;
-  }
-
-  foreach ($keys as $key => $val) {
-    $keys[$key] = preg_replace("/_/", '-', $val);
-  }
-  $field_id = implode('-', $keys);
-
-  if (!$js) {
-    drupal_add_js(drupal_get_path('module', 'cck_select_other') . '/cck_select_other.js');
-    $js = TRUE;
-  }
-  drupal_add_js(array('CCKSelectOther' => array(array('field_id' => $field_id))), array('type' => 'setting'));
-
-  return $content;
 }
 
 /**
