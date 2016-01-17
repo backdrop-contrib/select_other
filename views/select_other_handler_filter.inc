@@ -3,11 +3,10 @@
  * @file
  */
 
-
 /**
  * Extends Views in operator filter.
  */
-class cck_select_other_handler_filter extends views_handler_filter_in_operator {
+class select_other_handler_filter extends views_handler_filter_in_operator {
 
   /**
    * Init
@@ -59,7 +58,6 @@ class cck_select_other_handler_filter extends views_handler_filter_in_operator {
     }
 
     $field_id = str_replace('_', '-', 'options-' . $identifier);
-    drupal_add_js(array('CCKSelectOther' => array(array('field_id' => $field_id))), array('type' => 'setting'));
   }
 
   function exposed_submit(&$form, &$form_state) {
@@ -124,12 +122,6 @@ class cck_select_other_handler_filter extends views_handler_filter_in_operator {
         '#parents' => array('options', 'value', 'select_other_list'),
       ),
     );
-
-    if (!$js) {
-      drupal_add_js(drupal_get_path('module', 'cck_select_other') . '/cck_select_other.js');
-      $js = TRUE;
-    }
-    drupal_add_js(array('CCKSelectOther' => array(array('field_id' => 'options-value'))), array('type' => 'setting'));
   }
 
   function value_submit($form, &$form_state) {
@@ -145,7 +137,7 @@ class cck_select_other_handler_filter extends views_handler_filter_in_operator {
   }
 
   function get_value_options() {
-    $this->value_options = cck_select_other_options($this->instance);
+    $this->value_options = select_other_options($this->instance);
 
     // Get rid of none options.
     unset($this->value_options['']);
