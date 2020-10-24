@@ -1,7 +1,12 @@
 Select and Other
 ================
 
-A list field widget that also provides a write-in text box when Other is selected from the list.
+A `List` field widget that also provides a write-in text box when `Other` is
+selected from the list.
+
+**Difference from Select Or Other: **
+The select_or_other module does not provide a field widget for any of the
+`List` type fields. This module provides the missing widget.
 
 Installation
 ------------
